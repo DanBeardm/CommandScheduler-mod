@@ -1,0 +1,18 @@
+ ✅ /commandscheduler - should simply send a help menu of other commands
+ 
+ ✅ /commandscheduler list - should list all commands
+ ✅ /commandscheduler list active - should list all active commands
+ ✅ /commandscheduler list inactive - should list all inactive commands
+ 
+ ✅ /commandscheduler activate [id]
+ ✅ /commandscheduler deactivate [id]
+ 
+ ✅ /commandscheduler show [id] - gives all information about this command
+ ✅ /commandscheduler rename [id] [new name]
+ 
+ /commandscheduler add interval [id] [interval] [unit] [run at start] "[command]"
+ /commandscheduler add clock [id] "[command]"
+ /commandscheduler addtime [id] [time (ex 01:00)] - adds a time to when the command should run
+ /commandscheduler add once [id] "[command]"
+
+ 

@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "commandscheduler",
+	"version": "${version}",
+	"name": "command-scheduler",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/commandscheduler/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.william.commandscheduler.CommandScheduler"
+		],
+		"client": [
+			"net.william.commandscheduler.CommandSchedulerClient"
+		],
+		"fabric-datagen": [
+			"net.william.commandscheduler.CommandSchedulerDataGenerator"
+		]
+	},
+	"mixins": [
+		"commandscheduler.mixins.json",
+		{
+			"config": "commandscheduler.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.20.2",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
