@@ -1,19 +1,19 @@
  ✅ /commandscheduler - should simply send a help menu of other commands
  
- ✅ /commandscheduler list - should list all commands
- ✅ /commandscheduler list active - should list all active commands
- ✅ /commandscheduler list inactive - should list all inactive commands
+ ✅ /commandscheduler list - should list all scheduled commands
+ ✅ /commandscheduler list active - should list all active scheduled commands
+ ✅ /commandscheduler list inactive - should list all inactive scheduled commands
  
- ✅ /commandscheduler activate [id]
- ✅ /commandscheduler deactivate [id]
+ ✅ /commandscheduler activate [name]
+ ✅ /commandscheduler deactivate [name]
  
- ✅ /commandscheduler show [id] - gives all information about this command
- ✅ /commandscheduler rename [id] [new name]
+ ✅ /commandscheduler show [name] - gives all information about this scheduled command
+ ✅ /commandscheduler rename [name] [new name]
  
- /commandscheduler add interval [id] [interval] [unit] [run at start] "[command]"
- /commandscheduler add clock [id] "[command]"
- /commandscheduler addtime [id] [time (ex 01:00)] - adds a time to when the command should run
- /commandscheduler removetime [id] [time (ex 01:00)] - removes a time for when the command shouldn't run
- /commandscheduler add boot [id] "[command]"
+ /commandscheduler add interval [name] [interval] [unit] [run at start] "[command]"
+ /commandscheduler add clock [name] "[command]"
+ /commandscheduler addtime [name] [time (ex 01:00)] - adds a time to when the scheduled command should run
+ /commandscheduler removetime [name] [time (ex 01:00)] - removes a time for when the scheduled command shouldn't run
+ /commandscheduler add boot [name] "[command]"
 
  
