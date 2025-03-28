@@ -9,6 +9,8 @@ public class ClockBasedCommands {
     private String command;
     private List<int[]> times = new ArrayList<>();
     private String description;
+    private int lastRunHour = -1;
+    private int lastRunMinute = -1;
 
     public static List<ClockBasedCommands> defaultList() {
         ClockBasedCommands cmd = new ClockBasedCommands();
@@ -75,5 +77,18 @@ public class ClockBasedCommands {
 
     public void setDescription(String desc) {
         this.description = desc;
+    }
+
+    public int getLastRunHour() {
+        return lastRunHour;
+    }
+
+    public int getLastRunMinute() {
+        return lastRunMinute;
+    }
+
+    public void setLastRunTime(int hour, int minute) {
+        this.lastRunHour = hour;
+        this.lastRunMinute = minute;
     }
 }

@@ -30,6 +30,12 @@ public class CommandScheduler implements ModInitializer {
 	private static final int TICKS_PER_MINUTE = CommandScheduler.TICKS_PER_SECOND * 60; // 1 200
 	private static final int TICKS_PER_HOUR = CommandScheduler.TICKS_PER_MINUTE * 60; // 72 000
 
+	private static int bootDelayTicks = 0;
+	private static boolean ranBootCommands = false;
+
+	// Boot commands ran 15 seconds after boot
+	private static final int REQUIRED_BOOT_DELAY_TICKS = CommandScheduler.TICKS_PER_SECOND * 15;
+
 	private final int permissionLevel = 2; // 2 is for OPs
 
 	// This logger is used to write text to the console and the log file.
@@ -45,16 +51,6 @@ public class CommandScheduler implements ModInitializer {
 
 		LOGGER.info("CommandScheduler initialized.");
 		ServerLifecycleEvents.SERVER_STARTING.register(server -> registerCommands(server));
-
-		// Runs commands meant for once at boot
-		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-			for (OnceAtBootCommands oc : CommandSchedulerConfig.onceCommands) {
-				if (!oc.isExpired() && oc.isActive()) {
-					runCommand(server, oc.getCommand());
-					oc.setExpired();
-				}
-			}
-		});
 
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
 			// Tick-based interval commands
@@ -73,16 +69,37 @@ public class CommandScheduler implements ModInitializer {
 				}
 			}
 
+			bootDelayTicks++;
+
+			if (!ranBootCommands && bootDelayTicks >= REQUIRED_BOOT_DELAY_TICKS) {
+				ranBootCommands = true;
+
+				for (OnceAtBootCommands oc : CommandSchedulerConfig.onceCommands) {
+					if (!oc.isExpired() && oc.isActive()) {
+						runCommand(server, oc.getCommand());
+						oc.setExpired();
+					}
+				}
+
+				CommandSchedulerConfig.saveOnceCommands();
+			}
+
 			LocalTime now = LocalTime.now();
 			int hour = now.getHour();
 			int minute = now.getMinute();
 
-			// Time-of-day based commands (real system clock)
 			for (ClockBasedCommands cc : CommandSchedulerConfig.clockBasedCommands) {
+				if (!cc.isActive())
+					continue;
+
+				if (cc.getLastRunHour() == hour && cc.getLastRunMinute() == minute)
+					continue;
+
 				for (int[] t : cc.getTimes()) {
-					if (t[0] == hour && t[1] == minute && cc.isActive()) {
+					if (t[0] == hour && t[1] == minute) {
 						runCommand(server, cc.getCommand());
-						break; // prevent multiple triggers if duplicate times exist
+						cc.setLastRunTime(hour, minute);
+						break;
 					}
 				}
 			}

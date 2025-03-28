@@ -7,7 +7,7 @@ public class OnceAtBootCommands {
     private boolean active;
     private String command;
     private String description;
-    private boolean expired = false;
+    private transient boolean expired = false;
 
     public static List<OnceAtBootCommands> defaultList() {
         OnceAtBootCommands cmd = new OnceAtBootCommands();
