@@ -13,6 +13,7 @@
  /commandscheduler add interval [id] [interval] [unit] [run at start] "[command]"
  /commandscheduler add clock [id] "[command]"
  /commandscheduler addtime [id] [time (ex 01:00)] - adds a time to when the command should run
- /commandscheduler add once [id] "[command]"
+ /commandscheduler removetime [id] [time (ex 01:00)] - removes a time for when the command shouldn't run
+ /commandscheduler add boot [id] "[command]"
 
  
