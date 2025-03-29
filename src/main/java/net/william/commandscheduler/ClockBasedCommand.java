@@ -3,7 +3,7 @@ package net.william.commandscheduler;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClockBasedCommands {
+public class ClockBasedCommand implements ScheduledCommandInfo {
     private String ID;
     private boolean active;
     private String command;
@@ -12,8 +12,8 @@ public class ClockBasedCommands {
     private int lastRunHour = -1;
     private int lastRunMinute = -1;
 
-    public static List<ClockBasedCommands> defaultList() {
-        ClockBasedCommands cmd = new ClockBasedCommands();
+    public static List<ClockBasedCommand> defaultList() {
+        ClockBasedCommand cmd = new ClockBasedCommand();
         cmd.setID("test1");
         cmd.setActive(true);
         cmd.setCommand("say This is a fallback clock-based command");
@@ -22,20 +22,12 @@ public class ClockBasedCommands {
         return List.of(cmd);
     }
 
-    public String getID() {
-        return ID;
-    }
-
     public boolean setID(String ID) {
         if (ID.matches("^[a-zA-Z0-9._-]+$")) {
             this.ID = ID;
             return true;
         }
         return false;
-    }
-
-    public boolean isActive() {
-        return active;
     }
 
     public void setActive(boolean active) {
@@ -90,5 +82,15 @@ public class ClockBasedCommands {
     public void setLastRunTime(int hour, int minute) {
         this.lastRunHour = hour;
         this.lastRunMinute = minute;
+    }
+
+    @Override
+    public String getID() {
+        return this.ID;
+    }
+
+    @Override
+    public boolean isActive() {
+        return this.active;
     }
 }

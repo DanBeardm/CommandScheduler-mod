@@ -2,24 +2,20 @@ package net.william.commandscheduler;
 
 import java.util.List;
 
-public class OnceAtBootCommands {
+public class OnceAtBootCommand implements ScheduledCommandInfo {
     private String ID;
     private boolean active;
     private String command;
     private String description;
     private transient boolean expired = false;
 
-    public static List<OnceAtBootCommands> defaultList() {
-        OnceAtBootCommands cmd = new OnceAtBootCommands();
-        cmd.ID = "test2";
-        cmd.active = true;
-        cmd.command = "say This is a fallback once command";
-        cmd.setDescription("this is a description");
+    public static List<OnceAtBootCommand> defaultList() {
+        OnceAtBootCommand cmd = new OnceAtBootCommand();
+        cmd.setID("fallback2");
+        cmd.setCommand("say This is a fallback once command");
+        cmd.setDescription("this is a fallback description");
+        cmd.setActive(true);
         return List.of(cmd);
-    }
-
-    public String getID() {
-        return ID;
     }
 
     public boolean setID(String ID) {
@@ -28,10 +24,6 @@ public class OnceAtBootCommands {
             return true;
         }
         return false;
-    }
-
-    public boolean isActive() {
-        return active;
     }
 
     public void setActive(boolean active) {
@@ -60,6 +52,16 @@ public class OnceAtBootCommands {
 
     public void setDescription(String desc) {
         this.description = desc;
+    }
+
+    @Override
+    public String getID() {
+        return this.ID;
+    }
+
+    @Override
+    public boolean isActive() {
+        return this.active;
     }
 
 }

@@ -2,6 +2,7 @@ package net.william.commandscheduler;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
@@ -23,50 +24,60 @@ public class CommandSchedulerConfig {
 
   public static Path intervalPath;
   public static Path clockPath;
-  public static Path oncePath;
+  public static Path onceAtBootPath;
 
   private static final Path CONFIG_PATH = Paths.get("config", "commandscheduler");
   private static final Gson gson = new GsonBuilder()
+      .registerTypeAdapter(TimeUnit.class, (JsonDeserializer<TimeUnit>) (json, typeOfT, context) -> {
+        String value = json.getAsString();
+        return TimeUnit.fromString(value); // uses your existing equalsIgnoreCase logic
+      })
       .setPrettyPrinting()
       .disableHtmlEscaping()
       .create();
 
   private static final Logger LOGGER = LoggerFactory.getLogger("CommandScheduler");
 
-  private static final Type INTERVAL_TYPE = new TypeToken<List<IntervalCommands>>() {
+  private static final Type INTERVAL_TYPE = new TypeToken<List<IntervalCommand>>() {
   }.getType();
-  private static final Type CLOCKBASED_TYPE = new TypeToken<List<ClockBasedCommands>>() {
+  private static final Type CLOCKBASED_TYPE = new TypeToken<List<ClockBasedCommand>>() {
   }.getType();
-  private static final Type ONCE_TYPE = new TypeToken<List<OnceAtBootCommands>>() {
+  private static final Type ONCE_TYPE = new TypeToken<List<OnceAtBootCommand>>() {
   }.getType();
 
-  public static List<IntervalCommands> intervalCommands = new ArrayList<>();
-  public static List<ClockBasedCommands> clockBasedCommands = new ArrayList<>();
-  public static List<OnceAtBootCommands> onceCommands = new ArrayList<>();
+  private static List<IntervalCommand> intervalCommands = new ArrayList<>();
+  private static List<ClockBasedCommand> clockBasedCommands = new ArrayList<>();
+  private static List<OnceAtBootCommand> onceAtBootCommands = new ArrayList<>();
 
-  public static List<IntervalCommands> loadIntervalCommands() {
+  public static void loadAllCommands() {
+    intervalCommands = loadIntervalCommands();
+    clockBasedCommands = loadClockBasedCommands();
+    onceAtBootCommands = loadOnceAtBootCommands();
+  }
+
+  public static List<IntervalCommand> loadIntervalCommands() {
     intervalPath = CONFIG_PATH.resolve("intervals.json5");
-    List<IntervalCommands> list = loadConfig("intervals.json5", INTERVAL_TYPE, IntervalCommands.defaultList());
+    List<IntervalCommand> list = loadConfig("intervals.json5", INTERVAL_TYPE, IntervalCommand.defaultList());
     if (checkForDuplicateIDs(list, "intervals")) {
       saveIntervalCommands();
     }
     return list;
   }
 
-  public static List<ClockBasedCommands> loadClockBasedCommands() {
+  public static List<ClockBasedCommand> loadClockBasedCommands() {
     clockPath = CONFIG_PATH.resolve("clock_based.json5");
-    List<ClockBasedCommands> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE, ClockBasedCommands.defaultList());
+    List<ClockBasedCommand> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE, ClockBasedCommand.defaultList());
     if (checkForDuplicateIDs(list, "clock_based")) {
       saveClockBasedCommands();
     }
     return list;
   }
 
-  public static List<OnceAtBootCommands> loadOnceCommands() {
-    oncePath = CONFIG_PATH.resolve("once_at_boot.json5");
-    List<OnceAtBootCommands> list = loadConfig("once_at_boot.json5", ONCE_TYPE, OnceAtBootCommands.defaultList());
+  public static List<OnceAtBootCommand> loadOnceAtBootCommands() {
+    onceAtBootPath = CONFIG_PATH.resolve("once_at_boot.json5");
+    List<OnceAtBootCommand> list = loadConfig("once_at_boot.json5", ONCE_TYPE, OnceAtBootCommand.defaultList());
     if (checkForDuplicateIDs(list, "once_at_boot")) {
-      saveOnceCommands();
+      saveOnceAtBootCommands();
     }
     return list;
   }
@@ -74,13 +85,7 @@ public class CommandSchedulerConfig {
   public static void reloadConfigs() {
     intervalCommands = loadIntervalCommands();
     clockBasedCommands = loadClockBasedCommands();
-    onceCommands = loadOnceCommands();
-  }
-
-  public static class ScheduledCommand {
-    public String command;
-    public int interval_ticks;
-    public transient int tickCounter = 0; // Not saved
+    onceAtBootCommands = loadOnceAtBootCommands();
   }
 
   private static <T> List<T> loadConfig(String fileName, Type type, List<T> defaultList) {
@@ -157,34 +162,23 @@ public class CommandSchedulerConfig {
         """
             [
               {
-                "ID": "test",
-                "description": "This is a description of an interval command",
-                "active": false,
-                "command": "say This is ran every 10 seconds.",
-                "interval": 10,
-                // units are ticks, seconds, minutes or hours
-                "unit": "seconds",
-                // if the command should run once as the timer starts or not
-                "run_at_start": true
-              },
-              {
-                "ID": "test1",
-                "description": "This is a description of an interval command",
-                "active": false,
-                "command": "say This is ran every 2 hours.",
-                "interval": 2,
-                // units are ticks, seconds, minutes or hours
-                "unit": "hours",
+                "ID": "ExampleIntervalCommand",
+                "description": "This is the description for the 'interval' scheduler example. This runs every minute.",
+                "active": true,
+                "command": "say This command runs every minute! Via the CommandScheduler mod. If you are a server moderator, you should probably update this. Run /commandscheduler",
+                "interval": 1,
+                // units are ticks, seconds, minutes, hours or days
+                "unit": "minutes",
                 // if the command should run once as the timer starts or not
                 "run_at_start": false
               },
               {
-                "ID": "test2",
-                "description": "This is a description of an interval command",
+                "ID": "ExampleIntervalCommand2",
+                "description": "This is the description for the second 'interval' scheduler example. This runs every 7 game ticks, however is deactivated by default.",
                 "active": false,
-                "command": "say This is ran every 5 game ticks.",
-                "interval": 5,
-                // units are ticks, seconds, minutes or hours
+                "command": "say This runs every 7 game ticks. To deactivate, run /commandscheduler deactivate ExampleIntervalCommand2",
+                "interval": 7,
+                // units are ticks, seconds, minutes, hours or days
                 "unit": "ticks",
                 // if the command should run once as the timer starts or not
                 "run_at_start": false
@@ -195,10 +189,10 @@ public class CommandSchedulerConfig {
         """
             [
               {
-                "ID": "test3",
-                "description": "This is a description of a clock based command",
+                "ID": "ExampleClockBasedCommand",
+                "description": "This is the description for the 'clock-based' scheduler example. This runs at 01:00 and at 13:00.",
                 "active": false,
-                "command": "say It's 01:00 or 13:00!",
+                "command": "say It's 01:00 or 13:00! (commandscheduler mod)",
                 // Use 24h format: HH:mm
                 "times": [[1, 0], [13, 0]]
               }
@@ -208,10 +202,10 @@ public class CommandSchedulerConfig {
         """
             [
               {
-                "ID": "test4",
-                "description": "This is a description of a command ran at boot",
-                "active": true,
-                "command": "say This command runs once at server start! Via the CommandScheduler mod. You should probably update this. run /commandscheduler"
+                "ID": "ExampleAtBootCommand",
+                "description": "This is the description for the 'at boot' scheduler example. This runs every time the server boots",
+                "active": false,
+                "command": "say The server has booted! (commandscheduler mod)"
               }
             ]
             """;
@@ -221,16 +215,32 @@ public class CommandSchedulerConfig {
     Files.writeString(path, commentedJson, StandardCharsets.UTF_8);
   }
 
+  public static boolean removeCommandById(String id) {
+    boolean removed = false;
+
+    removed |= intervalCommands.removeIf(cmd -> cmd.getID().equals(id));
+    removed |= clockBasedCommands.removeIf(cmd -> cmd.getID().equals(id));
+    removed |= onceAtBootCommands.removeIf(cmd -> cmd.getID().equals(id));
+
+    if (removed) {
+      saveIntervalCommands();
+      saveClockBasedCommands();
+      saveOnceAtBootCommands();
+    }
+
+    return removed;
+  }
+
   public static Object getCommandById(String id) {
-    for (IntervalCommands ic : intervalCommands) {
+    for (IntervalCommand ic : intervalCommands) {
       if (ic.getID().equals(id))
         return ic;
     }
-    for (ClockBasedCommands cc : clockBasedCommands) {
+    for (ClockBasedCommand cc : clockBasedCommands) {
       if (cc.getID().equals(id))
         return cc;
     }
-    for (OnceAtBootCommands oc : onceCommands) {
+    for (OnceAtBootCommand oc : onceAtBootCommands) {
       if (oc.getID().equals(id))
         return oc;
     }
@@ -245,8 +255,32 @@ public class CommandSchedulerConfig {
     saveConfig(clockPath, clockBasedCommands);
   }
 
-  public static void saveOnceCommands() {
-    saveConfig(oncePath, onceCommands);
+  public static void saveOnceAtBootCommands() {
+    saveConfig(onceAtBootPath, onceAtBootCommands);
+  }
+
+  public static List<ClockBasedCommand> getClockBasedCommands() {
+    return Collections.unmodifiableList(clockBasedCommands);
+  }
+
+  public static List<IntervalCommand> getIntervalCommands() {
+    return Collections.unmodifiableList(intervalCommands);
+  }
+
+  public static List<OnceAtBootCommand> getOnceAtBootCommands() {
+    return Collections.unmodifiableList(onceAtBootCommands);
+  }
+
+  public static void addClockBasedCommand(ClockBasedCommand command) {
+    clockBasedCommands.add(command);
+  }
+
+  public static void addIntervalCommand(IntervalCommand command) {
+    intervalCommands.add(command);
+  }
+
+  public static void addOnceAtBootCommand(OnceAtBootCommand command) {
+    onceAtBootCommands.add(command);
   }
 
 }

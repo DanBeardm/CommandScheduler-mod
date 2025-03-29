@@ -4,16 +4,19 @@
  ✅ /commandscheduler list active - should list all active scheduled commands
  ✅ /commandscheduler list inactive - should list all inactive scheduled commands
  
- ✅ /commandscheduler activate [name]
- ✅ /commandscheduler deactivate [name]
+ ✅ /commandscheduler activate [id]
+ ✅ /commandscheduler deactivate [id]
  
- ✅ /commandscheduler show [name] - gives all information about this scheduled command
- ✅ /commandscheduler rename [name] [new name]
+ ✅ /commandscheduler details [id] - gives all information about this scheduled command
+ ✅ /commandscheduler rename [id] [new id]
+ ✅ /commandscheduler remove [id]
+ ✅ /commandscheduler description [id] [description]
  
- /commandscheduler add interval [name] [interval] [unit] [run at start] "[command]"
- /commandscheduler add clock [name] "[command]"
- /commandscheduler addtime [name] [time (ex 01:00)] - adds a time to when the scheduled command should run
- /commandscheduler removetime [name] [time (ex 01:00)] - removes a time for when the scheduled command shouldn't run
- /commandscheduler add boot [name] "[command]"
+ ✅ /commandscheduler interval [id] [unit] [interval] [command]
 
+ /commandscheduler clock [id] [command]
+ /commandscheduler addtime [id] [time (ex 01:00)] - adds a time to when the scheduled command should run
+ /commandscheduler removetime [id] [time (ex 01:00)] - removes a time for when the scheduled command shouldn't run
+ 
+ /commandscheduler boot [id] [command]
  
