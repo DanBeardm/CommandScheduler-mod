@@ -27,9 +27,9 @@ public class OnceAtBootCommand extends BaseScheduledCommand {
 
     @Override
     public String toString() {
-        return String.format(
-                "OnceAtBootCommand{id='%s', active=%s, command='%s'}",
-                ID, active, command, expired);
+        return String.format("OnceAtBootCommand{id='%s', active=%s, command='%s', expired=%s}", getID(), isActive(),
+                getCommand(), expired);
+
     }
 
 }
