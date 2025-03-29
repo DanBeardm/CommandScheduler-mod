@@ -56,8 +56,11 @@ public abstract class BaseScheduledCommand implements ScheduledCommandInfo {
     }
 
     public static boolean isValidCommand(String command) {
-        // Basic null/empty check — you could expand this depending on server command
-        // rules
-        return command != null && !command.trim().isEmpty();
+        if (command == null || command.trim().isEmpty()) {
+            return false;
+        }
+
+        String trimmed = command.trim();
+        return !trimmed.equalsIgnoreCase("stop") && !trimmed.equalsIgnoreCase("/stop");
     }
 }

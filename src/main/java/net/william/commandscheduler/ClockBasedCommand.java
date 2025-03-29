@@ -26,6 +26,20 @@ public class ClockBasedCommand extends BaseScheduledCommand {
         return times;
     }
 
+    public static boolean isValidTimeString(String time) {
+        if (time == null || !time.matches("^\\d{2}\\.\\d{2}$")) // Ensure the format is `hh.mm`
+            return false;
+
+        String[] parts = time.split("\\."); // Split based on period
+        try {
+            int hour = Integer.parseInt(parts[0]); // Parse hour
+            int minute = Integer.parseInt(parts[1]); // Parse minute
+            return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59; // Check if valid time
+        } catch (NumberFormatException e) {
+            return false; // Handle invalid numbers
+        }
+    }
+
     public boolean addTime(int hour, int minute) {
         if (hour < 0 || hour > 23 || minute < 0 || minute > 59)
             return false;

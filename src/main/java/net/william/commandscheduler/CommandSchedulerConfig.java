@@ -27,10 +27,11 @@ public class CommandSchedulerConfig {
   public static Path onceAtBootPath;
 
   private static final Path CONFIG_PATH = Paths.get("config", "commandscheduler");
+
   private static final Gson gson = new GsonBuilder()
       .registerTypeAdapter(TimeUnit.class, (JsonDeserializer<TimeUnit>) (json, typeOfT, context) -> {
         String value = json.getAsString();
-        return TimeUnit.fromString(value); // uses your existing equalsIgnoreCase logic
+        return TimeUnit.fromString(value);
       })
       .setPrettyPrinting()
       .disableHtmlEscaping()
@@ -66,10 +67,20 @@ public class CommandSchedulerConfig {
 
   public static List<ClockBasedCommand> loadClockBasedCommands() {
     clockPath = CONFIG_PATH.resolve("clock_based.json5");
+
     List<ClockBasedCommand> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE, ClockBasedCommand.defaultList());
-    if (checkForDuplicateIDs(list, "clock_based")) {
-      saveClockBasedCommands();
+
+    // Sort the times for each loaded command
+    for (ClockBasedCommand cc : list) {
+      cc.getTimes().sort((a, b) -> {
+        int cmp = Integer.compare(a[0], b[0]); // compare hours
+        return cmp != 0 ? cmp : Integer.compare(a[1], b[1]); // if equal, compare minutes
+      });
     }
+
+    clockBasedCommands = list;
+    saveClockBasedCommands();
+
     return list;
   }
 
@@ -206,10 +217,10 @@ public class CommandSchedulerConfig {
             [
               {
                 "ID": "ExampleClockBasedCommand",
-                "description": "This is the description for the 'clock-based' scheduler example. This runs at 01:00 and at 13:00.",
+                "description": "This is the description for the 'clock-based' scheduler example. This runs at 01.00 and at 13.00.",
                 "active": false,
-                "command": "say It's 01:00 or 13:00! (commandscheduler mod)",
-                // Use 24h format: HH:mm
+                "command": "say The time is either 01.00 or 13.00! (commandscheduler mod)",
+                // Use 24h format: HH.mm
                 "times": [[1, 0], [13, 0]]
               }
             ]
@@ -292,6 +303,17 @@ public class CommandSchedulerConfig {
   }
 
   public static void saveClockBasedCommands() {
+    // Sort the times in each ClockBasedCommand before saving
+    for (ClockBasedCommand cc : clockBasedCommands) {
+      cc.getTimes().sort((time1, time2) -> {
+        int hourComparison = Integer.compare(time1[0], time2[0]);
+        if (hourComparison != 0) {
+          return hourComparison; // Sort by hour first
+        }
+        return Integer.compare(time1[1], time2[1]); // Then by minute
+      });
+    }
+
     saveConfig(clockPath, clockBasedCommands);
   }
 
@@ -321,6 +343,28 @@ public class CommandSchedulerConfig {
 
   public static void addOnceAtBootCommand(OnceAtBootCommand command) {
     onceAtBootCommands.add(command);
+  }
+
+  public static List<String> getAllSchedulerIDs() {
+    List<String> ids = new ArrayList<>();
+    for (ScheduledCommandInfo cmd : getIntervalCommands()) {
+      ids.add(cmd.getID());
+    }
+    for (ScheduledCommandInfo cmd : getClockBasedCommands()) {
+      ids.add(cmd.getID());
+    }
+    for (ScheduledCommandInfo cmd : getOnceAtBootCommands()) {
+      ids.add(cmd.getID());
+    }
+    return ids;
+  }
+
+  public static List<String> getClockBasedSchedulerIDs() {
+    List<String> ids = new ArrayList<>();
+    for (ScheduledCommandInfo cmd : getClockBasedCommands()) {
+      ids.add(cmd.getID());
+    }
+    return ids;
   }
 
 }

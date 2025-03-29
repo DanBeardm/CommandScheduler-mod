@@ -8,15 +8,15 @@
  ✅ /commandscheduler deactivate [id]
  
  ✅ /commandscheduler details [id] - gives all information about this scheduled command
- ✅ /commandscheduler rename [id] [new id]
+ ✅ /commandscheduler rename [id] <new id>
  ✅ /commandscheduler remove [id]
- ✅ /commandscheduler description [id] [description]
+ ✅ /commandscheduler description [id] <description>
  
- ✅ /commandscheduler interval [id] [unit] [interval] [command]
+ ✅ /commandscheduler interval <id> [unit] <interval> <command>
 
- ✅ /commandscheduler clockbased [id] [command]
- /commandscheduler addtime [id] [time (ex 01:00)] - adds a time to when the scheduled command should run
- /commandscheduler removetime [id] [time (ex 01:00)] - removes a time for when the scheduled command shouldn't run
+ ✅ /commandscheduler clockbased <id> <command>
+ ✅ /commandscheduler addtime <id> <time> - adds a time to when the scheduled command should run
+ ✅ /commandscheduler removetime <id> <time> - removes a time for when the scheduled command shouldn't run
  
- /commandscheduler boot [id] [command]
+ /commandscheduler atboot <id> <command>
  
