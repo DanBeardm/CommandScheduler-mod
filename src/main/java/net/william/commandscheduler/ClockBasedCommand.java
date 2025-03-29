@@ -3,43 +3,23 @@ package net.william.commandscheduler;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClockBasedCommand implements ScheduledCommandInfo {
-    private String ID;
-    private boolean active;
-    private String command;
+public class ClockBasedCommand extends BaseScheduledCommand {
+
     private List<int[]> times = new ArrayList<>();
-    private String description;
     private int lastRunHour = -1;
     private int lastRunMinute = -1;
 
+    public ClockBasedCommand(String ID, String command) {
+        super(ID, true, command);
+    }
+
     public static List<ClockBasedCommand> defaultList() {
-        ClockBasedCommand cmd = new ClockBasedCommand();
-        cmd.setID("test1");
-        cmd.setActive(true);
-        cmd.setCommand("say This is a fallback clock-based command");
+        ClockBasedCommand cmd = new ClockBasedCommand("fallbackClock-basedScheduler",
+                "say this is a fallback clock-based scheduler");
         cmd.addTime(0, 0);
-        cmd.setDescription("this is a description");
+        cmd.setDescription(
+                "This is a fallback description. A bug has likely happened, as this scheduler should not exist!");
         return List.of(cmd);
-    }
-
-    public boolean setID(String ID) {
-        if (ID.matches("^[a-zA-Z0-9._-]+$")) {
-            this.ID = ID;
-            return true;
-        }
-        return false;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public void setCommand(String command) {
-        this.command = command;
     }
 
     public List<int[]> getTimes() {
@@ -63,14 +43,6 @@ public class ClockBasedCommand implements ScheduledCommandInfo {
         return times.removeIf(t -> t[0] == hour && t[1] == minute);
     }
 
-    public String getDescription() {
-        return this.description;
-    }
-
-    public void setDescription(String desc) {
-        this.description = desc;
-    }
-
     public int getLastRunHour() {
         return lastRunHour;
     }
@@ -79,18 +51,13 @@ public class ClockBasedCommand implements ScheduledCommandInfo {
         return lastRunMinute;
     }
 
-    public void setLastRunTime(int hour, int minute) {
+    public void run(int hour, int minute) {
         this.lastRunHour = hour;
         this.lastRunMinute = minute;
     }
 
     @Override
-    public String getID() {
-        return this.ID;
-    }
-
-    @Override
-    public boolean isActive() {
-        return this.active;
+    public String toString() {
+        return String.format("ClockBasedCommand{id='%s', active=%s, times=%s}", ID, active, times);
     }
 }

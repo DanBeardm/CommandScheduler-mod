@@ -2,70 +2,39 @@ package net.william.commandscheduler;
 
 import java.util.List;
 
-public class IntervalCommand implements ScheduledCommandInfo {
-    private String ID;
-    private boolean active;
-    private String command;
-    private int interval;
+public class IntervalCommand extends BaseScheduledCommand {
+
     private TimeUnit unit;
-    private String description;
+    private int interval;
     private int tickCounter;
 
     private boolean runInstantly = false;
     private boolean hasRun = false;
 
-    public IntervalCommand() {
-        resetTickCounter();
-    }
-
     public IntervalCommand(String ID, String command, int interval, String unit, boolean runInstantly) {
-        resetTickCounter();
-        this.setID(ID);
-        this.setCommand(command);
+        super(ID, true, command);
         this.setInterval(interval);
         this.setUnit(unit);
-        this.setActive(true);
-        this.setDescription("");
         this.setRunInstantly(runInstantly);
+        resetTickCounter();
     }
 
     public static List<IntervalCommand> defaultList() {
-        IntervalCommand cmd = new IntervalCommand();
-        cmd.setID("test");
-        cmd.setActive(true);
-        cmd.setCommand("say This is a fallback interval command");
-        cmd.setInterval(60);
-        cmd.setUnit("seconds");
-        cmd.setRunInstantly(false);
-        cmd.setDescription("this is a fallback description");
+        IntervalCommand cmd = new IntervalCommand("fallbackIntervalScheduler",
+                "say this is a fallback interval scheduler", 1, "seconds", false);
+        cmd.setDescription(
+                "This is a fallback description. A bug has likely happened, as this scheduler should not exist!");
         return List.of(cmd);
-    }
-
-    public boolean setID(String ID) {
-        if (ID.matches("^[a-zA-Z0-9._-]+$")) {
-            this.ID = ID;
-            return true;
-        }
-        return false;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public void setCommand(String command) {
-        this.command = command;
     }
 
     public int getInterval() {
         return interval;
     }
 
-    public void setInterval(int interval) {
+    public void setInterval(int interval) throws IllegalArgumentException {
+        if (!isValidInterval(interval)) {
+            throw new IllegalArgumentException("Interval must be positive.");
+        }
         this.interval = interval;
     }
 
@@ -73,13 +42,8 @@ public class IntervalCommand implements ScheduledCommandInfo {
         return unit;
     }
 
-    public boolean setUnit(String unitStr) {
-        try {
-            this.unit = TimeUnit.fromString(unitStr);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+    public void setUnit(String unitStr) throws IllegalArgumentException {
+        this.unit = TimeUnit.fromString(unitStr);
     }
 
     public boolean shouldRunInstantly() {
@@ -88,25 +52,6 @@ public class IntervalCommand implements ScheduledCommandInfo {
 
     public void setRunInstantly(boolean runInstantly) {
         this.runInstantly = runInstantly;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public void setDescription(String desc) {
-        this.description = desc;
-    }
-
-    public static boolean isValidID(String id) {
-        // Example: no spaces, only alphanumeric, dash or underscore
-        return id != null && id.matches("^[a-zA-Z0-9_-]+$");
-    }
-
-    public static boolean isValidCommand(String command) {
-        // Basic null/empty check — you could expand this depending on server command
-        // rules
-        return command != null && !command.trim().isEmpty();
     }
 
     public static boolean isValidInterval(int interval) {
@@ -126,16 +71,6 @@ public class IntervalCommand implements ScheduledCommandInfo {
         tickCounter++;
     }
 
-    @Override
-    public String getID() {
-        return this.ID;
-    }
-
-    @Override
-    public boolean isActive() {
-        return this.active;
-    }
-
     public void run() {
         this.hasRun = true;
         this.resetTickCounter();
@@ -147,6 +82,13 @@ public class IntervalCommand implements ScheduledCommandInfo {
 
     public void fastForwardUntilNextRun() {
         tickCounter = TimeUnit.getTickCountForUnits(unit, interval);
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "IntervalCommand{id='%s', active=%s, interval=%d, unit=%s, runAtStart=%s}",
+                ID, active, interval, unit.toString().toLowerCase(), runInstantly);
     }
 
 }

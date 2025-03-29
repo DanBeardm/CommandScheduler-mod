@@ -102,11 +102,28 @@ public class CommandSchedulerConfig {
 
       String json = Files.readString(path, StandardCharsets.UTF_8);
       List<T> loaded = gson.fromJson(json, type);
-      return loaded != null ? loaded : defaultList;
+      if (loaded == null)
+        return defaultList;
 
+      // Validate and filter entries
+      List<T> validEntries = new ArrayList<>();
+      for (T entry : loaded) {
+        try {
+          if (entry instanceof IntervalCommand ic) {
+            if (!IntervalCommand.isValidInterval(ic.getInterval())) {
+              LOGGER.error("Skipping invalid interval for ID '{}': {}", ic.getID(), ic.getInterval());
+              continue;
+            }
+          }
+          validEntries.add(entry);
+        } catch (Exception e) {
+          LOGGER.error("Skipping invalid entry in {}: {}", fileName, e.getMessage());
+        }
+      }
+      return validEntries.isEmpty() ? defaultList : validEntries;
     } catch (Exception e) {
-      e.printStackTrace();
-      return Collections.emptyList();
+      LOGGER.error("Failed to load {}: {}", fileName, e.getMessage());
+      return defaultList;
     }
   }
 
@@ -137,8 +154,7 @@ public class CommandSchedulerConfig {
               suffix++;
             } while (seen.containsKey(newID));
             idField.set(item, newID);
-            System.err.printf("[CommandScheduler] Renamed duplicate ID '%s' to '%s' in %s%n", originalID, newID,
-                typeName);
+            LOGGER.warn("Renamed duplicate ID '{}' to '{}' in {}", originalID, newID, typeName);
             seen.put(originalID, suffix - 1);
             seen.put(newID, 0);
             renamedAny = true;
@@ -147,7 +163,7 @@ public class CommandSchedulerConfig {
           }
         }
       } catch (Exception e) {
-        System.err.println("[CommandScheduler] Failed to access ID in " + typeName + ": " + e.getMessage());
+        LOGGER.warn("Failed to access ID in {}: {}", typeName, e.getMessage());
       }
     }
 

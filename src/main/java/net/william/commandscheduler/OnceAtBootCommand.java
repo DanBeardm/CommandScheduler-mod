@@ -2,40 +2,19 @@ package net.william.commandscheduler;
 
 import java.util.List;
 
-public class OnceAtBootCommand implements ScheduledCommandInfo {
-    private String ID;
-    private boolean active;
-    private String command;
-    private String description;
+public class OnceAtBootCommand extends BaseScheduledCommand {
     private transient boolean expired = false;
 
+    public OnceAtBootCommand(String ID, String command) {
+        super(ID, true, command);
+
+    }
+
     public static List<OnceAtBootCommand> defaultList() {
-        OnceAtBootCommand cmd = new OnceAtBootCommand();
-        cmd.setID("fallback2");
-        cmd.setCommand("say This is a fallback once command");
+        OnceAtBootCommand cmd = new OnceAtBootCommand("FallbackOnceAtBootScheduler",
+                "say this is a fallback onceAtBoot scheduler");
         cmd.setDescription("this is a fallback description");
-        cmd.setActive(true);
         return List.of(cmd);
-    }
-
-    public boolean setID(String ID) {
-        if (ID.matches("^[a-zA-Z0-9._-]+$")) {
-            this.ID = ID;
-            return true;
-        }
-        return false;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public void setCommand(String command) {
-        this.command = command;
     }
 
     public boolean isExpired() {
@@ -46,22 +25,11 @@ public class OnceAtBootCommand implements ScheduledCommandInfo {
         this.expired = true;
     }
 
-    public String getDescription() {
-        return this.description;
-    }
-
-    public void setDescription(String desc) {
-        this.description = desc;
-    }
-
     @Override
-    public String getID() {
-        return this.ID;
-    }
-
-    @Override
-    public boolean isActive() {
-        return this.active;
+    public String toString() {
+        return String.format(
+                "OnceAtBootCommand{id='%s', active=%s, command='%s'}",
+                ID, active, command, expired);
     }
 
 }
