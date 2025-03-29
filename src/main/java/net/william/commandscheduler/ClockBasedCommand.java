@@ -51,9 +51,14 @@ public class ClockBasedCommand extends BaseScheduledCommand {
         return lastRunMinute;
     }
 
-    public void run(int hour, int minute) {
+    public boolean run(int hour, int minute) {
+        if (this.lastRunHour == hour && this.lastRunMinute == minute) {
+            return false; // Already ran this minute
+        }
+
         this.lastRunHour = hour;
         this.lastRunMinute = minute;
+        return true; // New execution
     }
 
     @Override

@@ -98,13 +98,12 @@ public class CommandScheduler implements ModInitializer {
         if (!cc.isActive())
           continue;
 
-        if (cc.getLastRunHour() == hour && cc.getLastRunMinute() == minute)
-          continue;
-
         for (int[] t : cc.getTimes()) {
           if (t[0] == hour && t[1] == minute) {
-            runCommand(server, cc.getCommand());
-            cc.run(hour, minute);
+            if (cc.run(hour, minute)) {
+              runCommand(server, cc.getCommand());
+              CommandSchedulerConfig.saveClockBasedCommands();
+            }
             break;
           }
         }
@@ -361,36 +360,17 @@ public class CommandScheduler implements ModInitializer {
                       }
 
                       // Rename
-                      boolean success = false;
-
-                      if (!BaseScheduledCommand.isValidID(newId)) {
-                        ctx.getSource().sendError(Text.literal("[CommandScheduler] Invalid ID."));
-                        return 0;
-                      }
-
-                      if (cmd instanceof IntervalCommand ic) {
-                        success = ic.setID(newId);
-                        if (success)
-                          CommandSchedulerConfig.saveIntervalCommands();
-                      } else if (cmd instanceof ClockBasedCommand cc) {
-                        success = cc.setID(newId);
-                        if (success)
-                          CommandSchedulerConfig.saveClockBasedCommands();
-                      } else if (cmd instanceof OnceAtBootCommand oc) {
-                        success = oc.setID(newId);
-                        if (success)
-                          CommandSchedulerConfig.saveOnceAtBootCommands();
-                      }
-
+                      boolean success = CommandSchedulerConfig.updateSchedulerId(oldId, newId);
                       if (success) {
                         ctx.getSource().sendFeedback(
                             () -> Text.literal(
                                 "[CommandScheduler] Updated ID of scheduler: '" + oldId + "' -> '" + newId + "'."),
                             false);
+                        return 1;
                       } else {
-                        ctx.getSource().sendError(Text.literal("[CommandScheduler] Invalid ID."));
+                        ctx.getSource().sendError(Text.literal("[CommandScheduler] Invalid ID or failed to update."));
+                        return 0;
                       }
-                      return 1;
                     }))))
 
         // Set a description for a scheduler

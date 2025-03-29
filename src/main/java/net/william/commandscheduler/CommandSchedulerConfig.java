@@ -263,6 +263,30 @@ public class CommandSchedulerConfig {
     return null;
   }
 
+  public static boolean updateSchedulerId(String oldId, String newId) {
+    Object cmd = getCommandById(oldId);
+    if (cmd == null || !BaseScheduledCommand.isValidID(newId))
+      return false;
+
+    boolean success = false;
+
+    if (cmd instanceof IntervalCommand ic) {
+      success = ic.setID(newId);
+      if (success)
+        saveIntervalCommands();
+    } else if (cmd instanceof ClockBasedCommand cc) {
+      success = cc.setID(newId);
+      if (success)
+        saveClockBasedCommands();
+    } else if (cmd instanceof OnceAtBootCommand oc) {
+      success = oc.setID(newId);
+      if (success)
+        saveOnceAtBootCommands();
+    }
+
+    return success;
+  }
+
   public static void saveIntervalCommands() {
     saveConfig(intervalPath, intervalCommands);
   }
