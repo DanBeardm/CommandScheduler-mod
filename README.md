@@ -3,8 +3,10 @@
 A Minecraft Fabric mod for schedulable and repeatable commands — made for 1.20.2.  
 Created by Poizon.
 
-## MOD IS NOT YET FINISHED:
-The mod works, but it's not yet really playtested and I still plan on adding a couple of commands. There are example commands set and you can activate, deactivate and rename using commands, however I have not yet added a way of scheduling new commands. This currently has to be done using the config files, although it's not very difficult. For a checklist of currently implemented commands, check [this file](src/main/java/net/william/commandscheduler/commands_to_add.txt).
+## Status
+
+The mod is **mostly complete and stable**.  
+Almost all planned commands have been added, and most core functionality has been tested. You can activate, deactivate, rename, and schedule commands via in-game commands. See [this file](src/main/java/net/william/commandscheduler/ToDoList.txt) to see what is finished and what is planned ahead.
 
 ---
 
