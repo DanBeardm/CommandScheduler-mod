@@ -8,6 +8,13 @@ The mod works, but it's not yet really playtested and I still plan on adding a c
 
 ---
 
+## Status
+
+The mod is **mostly complete and stable**.  
+Almost all planned commands have been added, and most core functionality has been tested. You can activate, deactivate, rename, and schedule commands via in-game commands. See [this file](src/main/java/net/william/commandscheduler/commands_to_add.txt) to see what is finished and what is planned ahead.
+
+---
+
 ## What it does
 
 This simple mod lets any OP on a server schedule commands to run automatically.  
