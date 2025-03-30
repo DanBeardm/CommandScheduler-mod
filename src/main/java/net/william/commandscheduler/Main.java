@@ -20,7 +20,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -128,26 +127,26 @@ public class Main implements ModInitializer {
   private void registerUserCommands(MinecraftServer server) {
     CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
 
-    dispatcher.register(CommandManager.literal("commandscheduler")
+    dispatcher.register(literal("commandscheduler")
         .requires(source -> source.hasPermissionLevel(permissionLevel))
         .executes(ctx -> Messages.sendHelpMenu(ctx, 1))
 
         // Command for help menus
-        .then(CommandManager.literal("help")
-            .then(CommandManager.literal("1")
+        .then(literal("help")
+            .then(literal("1")
                 .executes(ctx -> Messages.sendHelpMenu(ctx, 1)))
-            .then(CommandManager.literal("2")
+            .then(literal("2")
                 .executes(ctx -> Messages.sendHelpMenu(ctx, 2)))
-            .then(CommandManager.literal("3")
+            .then(literal("3")
                 .executes(ctx -> Messages.sendHelpMenu(ctx, 3)))
-            .then(CommandManager.literal("4")
+            .then(literal("4")
                 .executes(ctx -> Messages.sendHelpMenu(ctx, 4)))
 
             .executes(ctx -> Messages.sendHelpMenu(ctx, 1)) // Send page 1 if no page supplied
         )
 
         // Command to show small about page for the mod, links to github repo
-        .then(CommandManager.literal("about")
+        .then(literal("about")
             .executes(ctx -> {
               ctx.getSource().sendFeedback(() -> Text.literal(" - CommandScheduler v1.0 ")
                   .styled(s -> s.withColor(Formatting.GOLD).withBold(true)), false);
@@ -183,7 +182,7 @@ public class Main implements ModInitializer {
             }))
 
         // Command to list all schedulers
-        .then(CommandManager.literal("list")
+        .then(literal("list")
             .executes(ctx -> {
               ServerCommandSource source = ctx.getSource();
 
@@ -238,8 +237,8 @@ public class Main implements ModInitializer {
                 })))
 
         // Command for activating a scheduler
-        .then(CommandManager.literal("activate")
-            .then(CommandManager.argument("id", StringArgumentType.word())
+        .then(literal("activate")
+            .then(argument("id", StringArgumentType.word())
                 .suggests((ctx, builder) -> {
                   for (String id : ConfigHandler.getAllSchedulerIDs()) {
                     Object cmd = ConfigHandler.getCommandById(id);
@@ -263,8 +262,8 @@ public class Main implements ModInitializer {
                 })))
 
         // Command for deactivating a scheduler
-        .then(CommandManager.literal("deactivate")
-            .then(CommandManager.argument("id", StringArgumentType.word())
+        .then(literal("deactivate")
+            .then(argument("id", StringArgumentType.word())
                 .suggests((ctx, builder) -> {
                   for (String id : ConfigHandler.getAllSchedulerIDs()) {
                     Object cmd = ConfigHandler.getCommandById(id);
@@ -289,7 +288,7 @@ public class Main implements ModInitializer {
 
         // Command to get details about a schedulers
         .then(literal("details")
-            .then(CommandManager.argument("id", StringArgumentType.word())
+            .then(argument("id", StringArgumentType.word())
                 .suggests((ctx, builder) -> {
                   for (String id : ConfigHandler.getAllSchedulerIDs()) {
                     builder.suggest(id);
@@ -392,7 +391,7 @@ public class Main implements ModInitializer {
                     }))))
 
         // Command for removing a scheduler
-        .then(CommandManager.literal("remove")
+        .then(literal("remove")
             .then(argument("id", StringArgumentType.word())
                 .suggests((ctx, builder) -> {
                   for (String id : ConfigHandler.getAllSchedulerIDs()) {
@@ -447,13 +446,12 @@ public class Main implements ModInitializer {
                 })))
 
         // Command for creating new schedulers
-        .then(CommandManager.literal("new")
+        .then(literal("new")
 
             // Command to add atboot schedulers.
-            // .then(CommandManager.literal("atboot")
-            .then(CommandManager.literal("atboot")
-                .then(CommandManager.argument("id", StringArgumentType.word())
-                    .then(CommandManager.argument("command", StringArgumentType.greedyString())
+            .then(literal(Types.ATBOOT.name)
+                .then(argument("id", StringArgumentType.word())
+                    .then(argument("command", StringArgumentType.greedyString())
                         .executes(ctx -> {
                           String id = StringArgumentType.getString(ctx, "id");
                           String command = StringArgumentType.getString(ctx, "command");
@@ -481,7 +479,7 @@ public class Main implements ModInitializer {
                         }))))
 
             // Command for creating a new interval scheduler
-            .then(literal("interval")
+            .then(literal(Types.INTERVAL.name)
                 .then(argument("id", StringArgumentType.word())
                     .then(argument("unit", StringArgumentType.word()).suggests((ctx, builder) -> {
                       for (String unitName : TimeUnit.getAllNames()) {
@@ -546,7 +544,7 @@ public class Main implements ModInitializer {
                                 }))))))
 
             // Command for creating a new clock-based scheduler
-            .then(literal("clockbased")
+            .then(literal(Types.CLOCKBASED.name)
                 .then(argument("id", StringArgumentType.word())
                     .then(argument("command", StringArgumentType.greedyString())
                         .executes(ctx -> {
