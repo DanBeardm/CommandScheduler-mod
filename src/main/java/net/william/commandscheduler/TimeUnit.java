@@ -1,5 +1,8 @@
 package net.william.commandscheduler;
 
+import java.util.Arrays;
+import java.util.List;
+
 public enum TimeUnit {
     TICKS,
     SECONDS,
@@ -38,5 +41,12 @@ public enum TimeUnit {
             case HOURS -> numberOfUnits * TICKS_PER_HOUR;
             case DAYS -> numberOfUnits * TICKS_PER_DAY;
         };
+    }
+
+    public static List<String> getAllNames() {
+        return Arrays.stream(values())
+                .map(TimeUnit::name)
+                .map(String::toLowerCase)
+                .toList();
     }
 }

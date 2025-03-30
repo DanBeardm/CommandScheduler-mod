@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -13,12 +14,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Writer;
 
 public class CommandSchedulerConfig {
 
@@ -57,18 +58,21 @@ public class CommandSchedulerConfig {
   }
 
   public static List<IntervalCommand> loadIntervalCommands() {
+
     intervalPath = CONFIG_PATH.resolve("intervals.json5");
-    List<IntervalCommand> list = loadConfig("intervals.json5", INTERVAL_TYPE, IntervalCommand.defaultList());
-    if (checkForDuplicateIDs(list, "intervals")) {
+    List<IntervalCommand> list = loadConfig("intervals.json5", INTERVAL_TYPE);
+
+    if (checkForDuplicateIDs(list)) {
       saveIntervalCommands();
     }
+
     return list;
   }
 
   public static List<ClockBasedCommand> loadClockBasedCommands() {
-    clockPath = CONFIG_PATH.resolve("clock_based.json5");
 
-    List<ClockBasedCommand> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE, ClockBasedCommand.defaultList());
+    clockPath = CONFIG_PATH.resolve("clock_based.json5");
+    List<ClockBasedCommand> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE);
 
     // Sort the times for each loaded command
     for (ClockBasedCommand cc : list) {
@@ -78,18 +82,21 @@ public class CommandSchedulerConfig {
       });
     }
 
-    clockBasedCommands = list;
-    saveClockBasedCommands();
+    if (checkForDuplicateIDs(list)) {
+      saveClockBasedCommands();
+    }
 
     return list;
   }
 
   public static List<OnceAtBootCommand> loadOnceAtBootCommands() {
     onceAtBootPath = CONFIG_PATH.resolve("once_at_boot.json5");
-    List<OnceAtBootCommand> list = loadConfig("once_at_boot.json5", ONCE_TYPE, OnceAtBootCommand.defaultList());
-    if (checkForDuplicateIDs(list, "once_at_boot")) {
+    List<OnceAtBootCommand> list = loadConfig("once_at_boot.json5", ONCE_TYPE);
+
+    if (checkForDuplicateIDs(list)) {
       saveOnceAtBootCommands();
     }
+
     return list;
   }
 
@@ -99,22 +106,19 @@ public class CommandSchedulerConfig {
     onceAtBootCommands = loadOnceAtBootCommands();
   }
 
-  private static <T> List<T> loadConfig(String fileName, Type type, List<T> defaultList) {
+  private static <T> List<T> loadConfig(String fileName, Type type) {
     try {
       Path path = CONFIG_PATH.resolve(fileName);
 
       if (!Files.exists(path)) {
         Files.createDirectories(CONFIG_PATH);
         writeDefaultConfigWithComments(fileName);
-        String json = Files.readString(path, StandardCharsets.UTF_8);
-        List<T> loaded = gson.fromJson(json, type);
-        return loaded != null ? loaded : defaultList;
       }
 
       String json = Files.readString(path, StandardCharsets.UTF_8);
       List<T> loaded = gson.fromJson(json, type);
       if (loaded == null)
-        return defaultList;
+        return new ArrayList<>();
 
       // Validate and filter entries
       List<T> validEntries = new ArrayList<>();
@@ -131,54 +135,58 @@ public class CommandSchedulerConfig {
           LOGGER.error("Skipping invalid entry in {}: {}", fileName, e.getMessage());
         }
       }
-      return validEntries.isEmpty() ? defaultList : validEntries;
+
+      return validEntries;
     } catch (Exception e) {
       LOGGER.error("Failed to load {}: {}", fileName, e.getMessage());
-      return defaultList;
+      return new ArrayList<>();
     }
   }
 
-  public static <T> void saveConfig(Path path, List<T> list) {
-    try (Writer writer = Files.newBufferedWriter(path)) {
-      gson.toJson(list, list.getClass(), writer);
+  private static <T> void saveConfig(Path path, List<T> list, Type type) {
+    try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+      gson.toJson(list, type, writer); // <-- USE THIS instead of list.getClass()
     } catch (IOException e) {
-      LOGGER.error("Failed to save config to " + path, e);
+      LOGGER.error("Failed to save config to {}: {}", path, e.getMessage());
     }
   }
 
-  private static <T> boolean checkForDuplicateIDs(List<T> list, String typeName) {
-    var seen = new java.util.HashMap<String, Integer>();
-    boolean renamedAny = false;
+  public static <T> boolean checkForDuplicateIDs(List<T> list) {
+    Map<String, Integer> idMap = new HashMap<>();
+    boolean duplicatesFound = false;
 
     for (T item : list) {
-      try {
-        var idField = item.getClass().getDeclaredField("ID");
-        idField.setAccessible(true);
-        Object idObj = idField.get(item);
+      if (!(item instanceof ScheduledCommandInfo cmd)) {
+        continue;
+      }
 
-        if (idObj instanceof String originalID) {
-          String newID = originalID;
-          if (seen.containsKey(originalID)) {
-            int suffix = seen.get(originalID) + 1;
-            do {
-              newID = originalID + "." + suffix;
-              suffix++;
-            } while (seen.containsKey(newID));
-            idField.set(item, newID);
-            LOGGER.warn("Renamed duplicate ID '{}' to '{}' in {}", originalID, newID, typeName);
-            seen.put(originalID, suffix - 1);
-            seen.put(newID, 0);
-            renamedAny = true;
-          } else {
-            seen.put(originalID, 0);
-          }
+      String originalID = cmd.getID();
+      int duplicateCount = idMap.getOrDefault(originalID, 0);
+
+      if (duplicateCount > 0) {
+        // Generate new unique ID
+        String newID;
+        do {
+          newID = originalID + "." + duplicateCount;
+          duplicateCount++;
+        } while (idMap.containsKey(newID));
+
+        // Update the command's ID
+        if (cmd instanceof BaseScheduledCommand baseCmd) {
+          baseCmd.setID(newID);
+          duplicatesFound = true;
+          LOGGER.warn("Renamed duplicate ID '{}' to '{}'", originalID, newID);
         }
-      } catch (Exception e) {
-        LOGGER.warn("Failed to access ID in {}: {}", typeName, e.getMessage());
+
+        // Track both old and new IDs
+        idMap.put(originalID, duplicateCount);
+        idMap.put(newID, 0);
+      } else {
+        idMap.put(originalID, 1);
       }
     }
 
-    return renamedAny;
+    return duplicatesFound;
   }
 
   private static void writeDefaultConfigWithComments(String fileName) throws Exception {
@@ -197,7 +205,7 @@ public class CommandSchedulerConfig {
                 // units are ticks, seconds, minutes, hours or days
                 "unit": "minutes",
                 // if the command should run once as the timer starts or not
-                "run_at_start": false
+                "runInstantly": false
               },
               {
                 "ID": "ExampleIntervalCommand2",
@@ -208,7 +216,7 @@ public class CommandSchedulerConfig {
                 // units are ticks, seconds, minutes, hours or days
                 "unit": "ticks",
                 // if the command should run once as the timer starts or not
-                "run_at_start": false
+                "runInstantly": false
               }
             ]
             """;
@@ -299,7 +307,7 @@ public class CommandSchedulerConfig {
   }
 
   public static void saveIntervalCommands() {
-    saveConfig(intervalPath, intervalCommands);
+    saveConfig(intervalPath, intervalCommands, INTERVAL_TYPE);
   }
 
   public static void saveClockBasedCommands() {
@@ -314,11 +322,11 @@ public class CommandSchedulerConfig {
       });
     }
 
-    saveConfig(clockPath, clockBasedCommands);
+    saveConfig(clockPath, clockBasedCommands, CLOCKBASED_TYPE);
   }
 
   public static void saveOnceAtBootCommands() {
-    saveConfig(onceAtBootPath, onceAtBootCommands);
+    saveConfig(onceAtBootPath, onceAtBootCommands, ONCE_TYPE);
   }
 
   public static List<ClockBasedCommand> getClockBasedCommands() {

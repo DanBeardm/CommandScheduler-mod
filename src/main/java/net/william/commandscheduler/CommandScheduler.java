@@ -37,7 +37,7 @@ public class CommandScheduler implements ModInitializer {
   private static int bootDelayTicks = 0;
   private static boolean ranBootCommands = false;
 
-  // Boot commands ran 15 seconds after boot
+  // Boot commands runs 15 seconds after boot
   private static final int REQUIRED_BOOT_DELAY_TICKS = TimeUnit.TICKS_PER_SECOND * 15;
 
   private static final int permissionLevel = 2; // 2 is for OPs
@@ -54,6 +54,7 @@ public class CommandScheduler implements ModInitializer {
     ServerLifecycleEvents.SERVER_STARTING.register(server -> registerCommands(server));
 
     ServerTickEvents.START_SERVER_TICK.register(server -> {
+
       // Tick-based interval commands (safe iteration via defensive copy)
       List<IntervalCommand> commands = new ArrayList<>(CommandSchedulerConfig.getIntervalCommands());
       for (IntervalCommand ic : commands) {
@@ -85,8 +86,6 @@ public class CommandScheduler implements ModInitializer {
             oc.setExpired();
           }
         }
-
-        CommandSchedulerConfig.saveOnceAtBootCommands();
       }
 
       LocalTime now = LocalTime.now();
@@ -128,15 +127,49 @@ public class CommandScheduler implements ModInitializer {
 
     dispatcher.register(CommandManager.literal("commandscheduler")
         .requires(source -> source.hasPermissionLevel(permissionLevel))
-        .executes(ctx -> showHelp(ctx.getSource(), 1))
+        .executes(ctx -> CommandMessages.sendHelpMenu(ctx, 1))
 
+        // Command for help menus
         .then(CommandManager.literal("help")
             .then(CommandManager.literal("1")
-                .executes(ctx -> showHelp(ctx.getSource(), 1)))
+                .executes(ctx -> CommandMessages.sendHelpMenu(ctx, 1)))
             .then(CommandManager.literal("2")
-                .executes(ctx -> showHelp(ctx.getSource(), 2)))
-            .executes(ctx -> showHelp(ctx.getSource(), 1)) // fallback if no number
+                .executes(ctx -> CommandMessages.sendHelpMenu(ctx, 2)))
+            .then(CommandManager.literal("3")
+                .executes(ctx -> CommandMessages.sendHelpMenu(ctx, 3)))
+            .then(CommandManager.literal("4")
+                .executes(ctx -> CommandMessages.sendHelpMenu(ctx, 4)))
+            .executes(ctx -> CommandMessages.sendHelpMenu(ctx, 1)) // fallback if no number
         )
+
+        // Command to show small about page for the mod and myself
+        .then(CommandManager.literal("about")
+            .executes(ctx -> {
+              ctx.getSource().sendFeedback(() -> Text.literal(" - CommandScheduler v1.0 ")
+                  .styled(s -> s.withColor(Formatting.GOLD).withBold(true)), false);
+
+              ctx.getSource().sendFeedback(() -> Text.literal(" - Fabric mod made by Poizon.")
+                  .styled(s -> s.withColor(Formatting.GRAY)), false);
+
+              ctx.getSource().sendFeedback(
+                  () -> Text
+                      .literal(" - Adds scheduled command execution by interval, time of day, or for server boot.")
+                      .styled(s -> s.withColor(Formatting.GRAY)),
+                  false);
+
+              ctx.getSource().sendFeedback(() -> Text.literal(" - Type ")
+                  .append(Text.literal("/commandscheduler").styled(s -> s.withColor(Formatting.YELLOW)))
+                  .append(" for usage.")
+                  .styled(s -> s.withColor(Formatting.GRAY)), false);
+
+              // Optional GitHub link
+              ctx.getSource().sendFeedback(() -> Text.literal(" - The github repository:\n")
+                  .append(Text.literal("https://github.com/wPoizon/command-scheduler-1.20.2")
+                      .styled(s -> s.withColor(Formatting.BLUE).withUnderline(true))),
+                  false);
+
+              return 1;
+            }))
 
         // Command for force reloading config files. Needed if they are manually changed
         .then(literal("forcereload")
@@ -146,24 +179,60 @@ public class CommandScheduler implements ModInitializer {
               return 1;
             }))
 
-        // Command for listing all schedulers
+        // Command to list all schedulers
         .then(CommandManager.literal("list")
             .executes(ctx -> {
               ServerCommandSource source = ctx.getSource();
 
-              sendListHeader(source, "Interval Schedulers");
-              printCommandList(source, CommandSchedulerConfig.getIntervalCommands());
+              CommandMessages.sendListHeader(source, "Interval Schedulers");
+              CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getIntervalCommands(), null);
 
-              sendListHeader(source, "Clock-Based Schedulers");
-              printCommandList(source, CommandSchedulerConfig.getClockBasedCommands());
+              CommandMessages.sendListHeader(source, "Clock-Based Schedulers");
+              CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getClockBasedCommands(), null);
 
-              sendListHeader(source, "At-Boot Schedulers");
-              printCommandList(source, CommandSchedulerConfig.getOnceAtBootCommands());
+              CommandMessages.sendListHeader(source, "At-Boot Schedulers");
+              CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getOnceAtBootCommands(), null);
 
               source.sendFeedback(() -> Text.literal(""), false); // This sends a blank line
 
               return 1;
             }))
+
+        // Command to list all active schedulers
+        .then(literal("list")
+            .then(literal("active")
+                .executes(ctx -> {
+                  ServerCommandSource source = ctx.getSource();
+
+                  CommandMessages.sendListHeader(source, "Active Interval Commands");
+                  CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getIntervalCommands(), true);
+
+                  CommandMessages.sendListHeader(source, "Active Clock-Based Commands");
+                  CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getClockBasedCommands(), true);
+
+                  CommandMessages.sendListHeader(source, "Active Run Once Commands");
+                  CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getOnceAtBootCommands(), true);
+
+                  return 1;
+                })))
+
+        // Command to list all inactive schedulers
+        .then(literal("list")
+            .then(literal("inactive")
+                .executes(ctx -> {
+                  ServerCommandSource source = ctx.getSource();
+
+                  CommandMessages.sendListHeader(source, "Inactive Interval Commands");
+                  CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getIntervalCommands(), false);
+
+                  CommandMessages.sendListHeader(source, "Inactive Clock-Based Commands");
+                  CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getClockBasedCommands(), false);
+
+                  CommandMessages.sendListHeader(source, "Inactive Run Once Commands");
+                  CommandMessages.sendSchedulerList(source, CommandSchedulerConfig.getOnceAtBootCommands(), false);
+
+                  return 1;
+                })))
 
         // Command for activating a scheduler
         .then(CommandManager.literal("activate")
@@ -185,7 +254,7 @@ public class CommandScheduler implements ModInitializer {
                   } else if (result) {
                     CommandMessages.sendActivationStatus(ctx, id, true);
                   } else {
-                    CommandMessages.sendNoWithID(ctx, id);
+                    CommandMessages.sendIdNotFound(ctx, id);
                   }
                   return 1;
                 })))
@@ -210,7 +279,7 @@ public class CommandScheduler implements ModInitializer {
                   } else if (result) {
                     CommandMessages.sendActivationStatus(ctx, id, false);
                   } else {
-                    CommandMessages.sendNoWithID(ctx, id);
+                    CommandMessages.sendIdNotFound(ctx, id);
                   }
                   return 1;
                 })))
@@ -229,7 +298,7 @@ public class CommandScheduler implements ModInitializer {
                   Object cmd = CommandSchedulerConfig.getCommandById(id);
 
                   if (cmd == null) {
-                    CommandMessages.sendNoWithID(ctx, id); // Error message for no scheduler with this ID
+                    CommandMessages.sendIdNotFound(ctx, id); // Error message for no scheduler with this ID
                     return 0;
                   }
 
@@ -238,66 +307,28 @@ public class CommandScheduler implements ModInitializer {
                   return 1;
                 })))
 
-        // Command to list all active schedulers
-        .then(literal("list")
-            .then(literal("active")
-                .executes(ctx -> {
-                  ServerCommandSource source = ctx.getSource();
-
-                  sendListHeader(source, "Active Interval Commands");
-                  printCommandList(source, CommandSchedulerConfig.getIntervalCommands(), true);
-
-                  sendListHeader(source, "Active Clock-Based Commands");
-                  printCommandList(source, CommandSchedulerConfig.getClockBasedCommands(), true);
-
-                  sendListHeader(source, "Active Run Once Commands");
-                  printCommandList(source, CommandSchedulerConfig.getOnceAtBootCommands(), true);
-
-                  return 1;
-                })))
-
-        // Command to list all inactive schedulers
-        .then(literal("list")
-            .then(literal("inactive")
-                .executes(ctx -> {
-                  ServerCommandSource source = ctx.getSource();
-
-                  sendListHeader(source, "Inactive Interval Commands");
-                  printCommandList(source, CommandSchedulerConfig.getIntervalCommands(), false);
-
-                  sendListHeader(source, "Inactive Clock-Based Commands");
-                  printCommandList(source, CommandSchedulerConfig.getClockBasedCommands(), false);
-
-                  sendListHeader(source, "Inactive Run Once Commands");
-                  printCommandList(source, CommandSchedulerConfig.getOnceAtBootCommands(), false);
-
-                  return 1;
-                })))
-
         // Rename a scheduler
         .then(literal("rename")
             .then(argument("id", StringArgumentType.word())
+                .suggests((ctx, builder) -> {
+                  for (String id : CommandSchedulerConfig.getAllSchedulerIDs()) {
+                    builder.suggest(id);
+                  }
+                  return builder.buildFuture();
+                })
                 .then(argument("new", StringArgumentType.word())
-                    .suggests((ctx, builder) -> {
-                      for (String id : CommandSchedulerConfig.getAllSchedulerIDs()) {
-                        builder.suggest(id);
-                      }
-                      return builder.buildFuture();
-                    })
                     .executes(ctx -> {
                       String oldId = StringArgumentType.getString(ctx, "id");
                       String newId = StringArgumentType.getString(ctx, "new");
 
                       if (CommandSchedulerConfig.getCommandById(newId) != null) {
-                        ctx.getSource().sendError(
-                            Text.literal("✖ A scheduler with that ID already exists.")
-                                .styled(s -> s.withColor(Formatting.RED)));
+                        CommandMessages.sendIDAlreadyExists(ctx);
                         return 0;
                       }
 
                       Object cmd = CommandSchedulerConfig.getCommandById(oldId);
                       if (cmd == null) {
-                        CommandMessages.sendNoWithID(ctx, oldId); // Error message for no scheduler with this ID
+                        CommandMessages.sendIdNotFound(ctx, oldId); // Error message for no scheduler with this ID
                         return 0;
                       }
 
@@ -307,9 +338,7 @@ public class CommandScheduler implements ModInitializer {
                         CommandMessages.sendRenamedMessage(ctx, oldId, newId);
                         return 1;
                       } else {
-                        ctx.getSource().sendError(
-                            Text.literal("✖ Invalid ID or failed to update scheduler.")
-                                .styled(s -> s.withColor(Formatting.RED)));
+                        CommandMessages.sendInvalidID(ctx);
                         return 0;
                       }
                     }))))
@@ -317,13 +346,13 @@ public class CommandScheduler implements ModInitializer {
         // Set a description for a scheduler
         .then(literal("description")
             .then(argument("id", StringArgumentType.word())
+                .suggests((ctx, builder) -> {
+                  for (String id : CommandSchedulerConfig.getAllSchedulerIDs()) {
+                    builder.suggest(id);
+                  }
+                  return builder.buildFuture();
+                })
                 .then(argument("description", StringArgumentType.greedyString())
-                    .suggests((ctx, builder) -> {
-                      for (String id : CommandSchedulerConfig.getAllSchedulerIDs()) {
-                        builder.suggest(id);
-                      }
-                      return builder.buildFuture();
-                    })
                     .executes(ctx -> {
                       String id = StringArgumentType.getString(ctx, "id");
                       String desc = StringArgumentType.getString(ctx, "description");
@@ -331,7 +360,7 @@ public class CommandScheduler implements ModInitializer {
                       Object cmd = CommandSchedulerConfig.getCommandById(id);
 
                       if (cmd == null) {
-                        CommandMessages.sendNoWithID(ctx, id); // Error message for no scheduler with this ID
+                        CommandMessages.sendIdNotFound(ctx, id); // Error message for no scheduler with this ID
                         return 0;
                       }
 
@@ -384,7 +413,7 @@ public class CommandScheduler implements ModInitializer {
                     if (success) {
                       CommandMessages.sendRemovedMessage(source, id);
                     } else {
-                      CommandMessages.sendNoWithID(ctx, id); // Error message for no scheduler with this ID
+                      CommandMessages.sendIdNotFound(ctx, id); // Error message for no scheduler with this ID
                     }
                     pendingRemovals.remove(playerUUID); // Clear confirmation
                   } else {
@@ -399,7 +428,12 @@ public class CommandScheduler implements ModInitializer {
         // Command for creating a new interval scheduler
         .then(literal("interval")
             .then(argument("id", StringArgumentType.word())
-                .then(argument("unit", StringArgumentType.word())
+                .then(argument("unit", StringArgumentType.word()).suggests((ctx, builder) -> {
+                  for (String unitName : TimeUnit.getAllNames()) {
+                    builder.suggest(unitName);
+                  }
+                  return builder.buildFuture();
+                })
                     .then(argument("interval", IntegerArgumentType.integer(1)) // Minimum 1
                         .then(argument("command", StringArgumentType.greedyString())
                             .executes(ctx -> {
@@ -412,9 +446,7 @@ public class CommandScheduler implements ModInitializer {
 
                               // Validate all inputs
                               if (!BaseScheduledCommand.isValidID(id)) {
-                                ctx.getSource().sendError(
-                                    Text.literal("✖ Invalid ID.")
-                                        .styled(s -> s.withColor(Formatting.RED)));
+                                CommandMessages.sendInvalidID(ctx);
                                 return 0;
                               }
                               if (!TimeUnit.isValid(unit)) {
@@ -439,9 +471,7 @@ public class CommandScheduler implements ModInitializer {
 
                               // Check for existing ID
                               if (CommandSchedulerConfig.getCommandById(id) != null) {
-                                ctx.getSource().sendError(
-                                    Text.literal("✖ A scheduler with that ID already exists.")
-                                        .styled(s -> s.withColor(Formatting.RED)));
+                                CommandMessages.sendIDAlreadyExists(ctx);
                                 return 0;
                               }
 
@@ -471,16 +501,12 @@ public class CommandScheduler implements ModInitializer {
                       String command = StringArgumentType.getString(ctx, "command");
 
                       if (CommandSchedulerConfig.getCommandById(id) != null) {
-                        ctx.getSource().sendError(
-                            Text.literal("✖ A scheduler with that ID already exists.")
-                                .styled(s -> s.withColor(Formatting.RED)));
+                        CommandMessages.sendIDAlreadyExists(ctx);
                         return 0;
                       }
 
                       if (!BaseScheduledCommand.isValidID(id)) {
-                        ctx.getSource().sendError(
-                            Text.literal("✖ Invalid ID.")
-                                .styled(s -> s.withColor(Formatting.RED)));
+                        CommandMessages.sendInvalidID(ctx);
                         return 0;
                       }
 
@@ -521,7 +547,8 @@ public class CommandScheduler implements ModInitializer {
 
                       Object cmd = CommandSchedulerConfig.getCommandById(id);
                       if (!(cmd instanceof ClockBasedCommand cc)) {
-                        CommandMessages.sendNoClockBasedWithID(ctx, id); // Error message for no scheduler with this ID
+                        CommandMessages.sendClockBasedIdNotFound(ctx, id); // Error message for no scheduler with this
+                                                                           // ID
                         return 0;
                       }
 
@@ -567,9 +594,17 @@ public class CommandScheduler implements ModInitializer {
                 })
                 .then(argument("time", StringArgumentType.word())
                     .suggests((context, builder) -> {
-                      builder.suggest("00.00");
-                      builder.suggest("12.34");
-                      builder.suggest("22.45");
+                      if (context.getNodes().size() > 1) {
+                        String id = StringArgumentType.getString(context, "id");
+                        Object cmd = CommandSchedulerConfig.getCommandById(id);
+
+                        if (cmd instanceof ClockBasedCommand cc) {
+                          for (int[] time : cc.getTimes()) {
+                            String formatted = String.format("%02d.%02d", time[0], time[1]);
+                            builder.suggest(formatted);
+                          }
+                        }
+                      }
                       return builder.buildFuture();
                     })
                     .executes(ctx -> {
@@ -578,7 +613,8 @@ public class CommandScheduler implements ModInitializer {
 
                       Object cmd = CommandSchedulerConfig.getCommandById(id);
                       if (!(cmd instanceof ClockBasedCommand cc)) {
-                        CommandMessages.sendNoClockBasedWithID(ctx, id); // Error message for no scheduler with this ID
+                        CommandMessages.sendClockBasedIdNotFound(ctx, id); // Error message for no scheduler with this
+                                                                           // ID
                         return 0;
                       }
 
@@ -626,61 +662,33 @@ public class CommandScheduler implements ModInitializer {
                       return 1;
                     }))))
 
+        // Command to add atboot schedulers.
+        .then(CommandManager.literal("atboot")
+            .then(CommandManager.argument("id", StringArgumentType.word())
+                .then(CommandManager.argument("command", StringArgumentType.greedyString())
+                    .executes(ctx -> {
+                      String id = StringArgumentType.getString(ctx, "id");
+                      String command = StringArgumentType.getString(ctx, "command");
+
+                      if (!BaseScheduledCommand.isValidID(id)) {
+                        CommandMessages.sendInvalidID(ctx);
+                        return 0;
+                      }
+
+                      if (CommandSchedulerConfig.getCommandById(id) != null) {
+                        CommandMessages.sendIDAlreadyExists(ctx);
+                        return 0;
+                      }
+
+                      OnceAtBootCommand cmd = new OnceAtBootCommand(id, command);
+                      CommandSchedulerConfig.addOnceAtBootCommand(cmd);
+                      CommandSchedulerConfig.saveOnceAtBootCommands();
+
+                      CommandMessages.sendCreatedMessage(ctx, "at-boot", id);
+                      return 1;
+                    }))))
+
     );
-  }
-
-  private static void sendListHeader(ServerCommandSource source, String title) {
-    source.sendFeedback(() -> Text.literal("\n§6[" + title + "]"), false);
-  }
-
-  private static <T extends ScheduledCommandInfo> void printCommandList(ServerCommandSource source, List<T> list) {
-    int count = 0;
-    for (T entry : list) {
-      if (count >= 10) {
-        Text.literal("...and more (use pagination later)")
-            .styled(s -> s.withColor(Formatting.DARK_GRAY).withItalic(true));
-        break;
-      }
-
-      String id = entry.getID();
-      boolean active = entry.isActive();
-      source.sendFeedback(() -> Text.literal(" - ")
-          .append(Text.literal(id).styled(s -> s.withColor(Formatting.YELLOW)))
-          .append(Text.literal(" (" + (active ? "active" : "inactive") + ")")
-              .styled(s -> s.withColor(Formatting.GRAY))),
-          false);
-      count++;
-    }
-
-    if (list.isEmpty()) {
-      source.sendFeedback(() -> Text.literal(" §8(no schedulers found)"), false);
-    }
-  }
-
-  private static <T> void printCommandList(ServerCommandSource source, List<T> list, boolean activeOnly) {
-    int count = 0;
-    for (T entry : list) {
-      // Cast to the ScheduledCommandInfo interface
-      ScheduledCommandInfo cmd = (ScheduledCommandInfo) entry;
-
-      String id = cmd.getID();
-      boolean isActive = cmd.isActive();
-
-      if (isActive != activeOnly)
-        continue;
-
-      source.sendFeedback(() -> Text.literal(" - " + id + " (" + (isActive ? "active" : "inactive") + ")"),
-          false);
-      count++;
-    }
-
-    if (count == 0) {
-      if (activeOnly) {
-        source.sendFeedback(() -> Text.literal(" §8(no active schedulers found)"), false);
-      } else {
-        source.sendFeedback(() -> Text.literal(" §8(no inactive schedulers found)"), false);
-      }
-    }
   }
 
   private static Boolean setCommandActiveState(String id, boolean active) {
@@ -729,85 +737,6 @@ public class CommandScheduler implements ModInitializer {
 
   public static String getModId() {
     return MOD_ID;
-  }
-
-  private static int showHelp(ServerCommandSource source, int page) {
-    // First page
-    if (page == 1) {
-      source.sendFeedback(() -> Text.literal("")
-          .append(Text.literal("[CommandScheduler Help Page 1/2]")
-              .styled(s -> s.withColor(Formatting.GOLD).withBold(true)))
-          .append(Text.literal("\nAvailable commands:").styled(s -> s.withColor(Formatting.YELLOW))),
-          false);
-
-      source.sendFeedback(() -> CommandMessages.styledCommand("list"), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("list ").append(CommandMessages.arg("active")), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("list ").append(CommandMessages.arg("inactive")), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("details ").append(CommandMessages.arg("[id]")), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("activate ").append(CommandMessages.arg("[id]")), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("deactivate ").append(CommandMessages.arg("[id]")),
-          false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("rename ")
-          .append(CommandMessages.arg("id")).append(" ").append(CommandMessages.arg("[new id]")), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("remove ").append(CommandMessages.arg("[id]")), false);
-      source.sendFeedback(() -> CommandMessages.styledCommand("forcereload"), false);
-
-      source.sendFeedback(() -> CommandMessages.styledCommand("interval ")
-          .append(CommandMessages.arg("[id]")).append(" ")
-          .append(CommandMessages.arg("[unit]")).append(" ")
-          .append(CommandMessages.arg("[interval]")).append(" ")
-          .append(CommandMessages.arg("<command>", Formatting.DARK_GRAY)), false);
-
-      source.sendFeedback(() -> CommandMessages.styledCommand("clockbased ")
-          .append(CommandMessages.arg("[id]")).append(" ")
-          .append(CommandMessages.arg("<command>", Formatting.DARK_GRAY)), false);
-
-      source.sendFeedback(() -> CommandMessages.styledCommand("addtime ")
-          .append(CommandMessages.arg("[id]")).append(" ").append(CommandMessages.arg("[hh:mm]")), false);
-
-      source.sendFeedback(() -> CommandMessages.styledCommand("atboot ")
-          .append(CommandMessages.arg("[id]")).append(" ")
-          .append(CommandMessages.arg("<command>", Formatting.DARK_GRAY)), false);
-
-      source.sendFeedback(() -> Text.literal("For an explanation of the arguments, run ")
-          .append(Text.literal("/commandscheduler help 2").styled(s -> s.withColor(Formatting.YELLOW))),
-          false);
-
-      // Second page
-    } else if (page == 2)
-
-    {
-      source.sendFeedback(() -> Text.literal("\n§6[CommandScheduler Help Page 2/2]"), false);
-      source.sendFeedback(() -> Text.literal("Explanations for the command arguments:"), false);
-
-      source.sendFeedback(() -> Text.literal(" - ")
-          .append(Text.literal("id").styled(style -> style.withItalic(true)))
-          .append(
-              " is the name you wish to have for the command scheduler. Can not include spaces or some special characters."),
-          false);
-
-      source.sendFeedback(() -> Text.literal(" - ")
-          .append(Text.literal("unit").styled(style -> style.withItalic(true)))
-          .append(" is the time unit used for the interval. Use 'ticks', 'seconds', 'minutes', 'hours', or 'days'."),
-          false);
-
-      source.sendFeedback(() -> Text.literal(" - ")
-          .append(Text.literal("interval").styled(style -> style.withItalic(true)))
-          .append(" is the time between each execution, using the time unit specified earlier. Must be an integer."),
-          false);
-
-      source.sendFeedback(() -> Text.literal(" - ")
-          .append(Text.literal("command").styled(style -> style.withItalic(true)))
-          .append(" is the command you want the scheduler to run."), false);
-
-      // Fall back (wrong page)
-    } else {
-      source.sendFeedback(() -> Text.literal("§6[CommandScheduler Help Page ?/2]"), false);
-      source.sendFeedback(() -> Text.literal("This page doesn't exist."), false);
-
-    }
-
-    return 1;
   }
 
 }

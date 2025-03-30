@@ -1,0 +1,27 @@
+ 
+ ✅ /commandscheduler - should simply send a help menu of other commands
+ ✅ /commandscheduler help [page]
+ ✅ /commandscheduler forcereload - reloads the config files
+ 
+ ✅ /commandscheduler interval <id> [unit] <interval> <command>
+ ✅ /commandscheduler atboot <id> <command>
+ ✅ /commandscheduler clockbased <id> <command>
+ 
+ ✅ /commandscheduler list - should list all scheduled commands
+ ✅ /commandscheduler list active - should list all active scheduled commands
+ ✅ /commandscheduler list inactive - should list all inactive scheduled commands
+ ✅ /commandscheduler details [id] - gives all information about this scheduled command
+ 
+ ✅ /commandscheduler activate [id]
+ ✅ /commandscheduler deactivate [id]
+ ✅ /commandscheduler rename [id] <new id>
+ ✅ /commandscheduler description [id] <description> - adds a description
+ ✅ /commandscheduler addtime <id> <time> - adds a time to when the scheduled command should run
+ ✅ /commandscheduler removetime <id> <time> - removes a time for when the scheduled command shouldn't run
+ ✅ /commandscheduler remove [id]
+ 
+ ❌ /commandscheduler list interval - These should have pages!
+ ❌ /commandscheduler list clockbased - These should have pages!
+ ❌ /commandscheduler list atboot - These should have pages!
+ 
+ - Fix printout of list command if more than 10 items

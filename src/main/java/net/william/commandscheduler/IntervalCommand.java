@@ -1,15 +1,13 @@
 package net.william.commandscheduler;
 
-import java.util.List;
-
 public class IntervalCommand extends BaseScheduledCommand {
 
     private TimeUnit unit;
     private int interval;
-    private int tickCounter;
-
     private boolean runInstantly = false;
-    private boolean hasRun = false;
+
+    private transient int tickCounter;
+    private transient boolean hasRun = false;
 
     public IntervalCommand(String ID, String command, int interval, String unit, boolean runInstantly) {
         super(ID, true, command);
@@ -17,14 +15,6 @@ public class IntervalCommand extends BaseScheduledCommand {
         this.setUnit(unit);
         this.setRunInstantly(runInstantly);
         resetTickCounter();
-    }
-
-    public static List<IntervalCommand> defaultList() {
-        IntervalCommand cmd = new IntervalCommand("fallbackIntervalScheduler",
-                "say this is a fallback interval scheduler", 1, "seconds", false);
-        cmd.setDescription(
-                "This is a fallback description. A bug has likely happened, as this scheduler should not exist!");
-        return List.of(cmd);
     }
 
     public int getInterval() {
