@@ -19,9 +19,12 @@
  ✅ /commandscheduler addtime <id> <time> - adds a time to when the scheduled command should run
  ✅ /commandscheduler removetime <id> <time> - removes a time for when the scheduled command shouldn't run
  ✅ /commandscheduler remove [id]
+
+ ❌ /commandscheduler singlefire [id] [date] [time] [command] - A new type of scheduler! Fire the command once on a specific time stamp, and then delete itself. Requires new config file.
  
  ❌ /commandscheduler list interval - These should have pages!
  ❌ /commandscheduler list clockbased - These should have pages!
  ❌ /commandscheduler list atboot - These should have pages!
+ ❌ /commandscheduler list singlefire - These should have pages! 
  
- - Fix printout of list command if more than 10 items
+ - Fix printout of list command if more than 10 items. Maybe reduce to like 4 max of each? (4+1) x 4 = 20 lines
