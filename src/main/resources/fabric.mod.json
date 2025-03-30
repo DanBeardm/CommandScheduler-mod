@@ -16,7 +16,7 @@
 	"environment": "*",
 	"entrypoints": {
 	  "main": [
-		"net.william.commandscheduler.CommandScheduler"
+		"net.william.commandscheduler.Main"
 	  ],
 	  "client": [
 		"net.william.commandscheduler.CommandschedulerClient"
