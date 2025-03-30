@@ -9,7 +9,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-public class CommandMessages {
+public class Messages {
 
 	public static MutableText label(String name) {
 		return Text.literal(" - " + name + ": ")
@@ -48,6 +48,12 @@ public class CommandMessages {
 						.styled(s -> s.withColor(Formatting.RED)));
 	}
 
+	public static void sendInvalidCommand(CommandContext<ServerCommandSource> ctx) {
+		ctx.getSource().sendError(
+				Text.literal("✖ Command not allowed!")
+						.styled(s -> s.withColor(Formatting.RED)));
+	}
+
 	public static void sendIDAlreadyExists(CommandContext<ServerCommandSource> ctx) {
 		ctx.getSource().sendError(
 				Text.literal("✖ A scheduler with that ID already exists.")
@@ -80,7 +86,7 @@ public class CommandMessages {
 						.styled(s -> s.withColor(Formatting.GOLD).withBold(true)))
 				.append(Text.literal(id).styled(s -> s.withColor(Formatting.YELLOW)));
 
-		if (cmd instanceof IntervalCommand ic) {
+		if (cmd instanceof Interval ic) {
 			output.append(Text.literal(" - Type: ")
 					.styled(s -> s.withBold(true).withColor(Formatting.GRAY)))
 					.append(Text.literal("Interval\n"));
@@ -109,7 +115,7 @@ public class CommandMessages {
 						.append(Text.literal("\n"));
 			}
 
-		} else if (cmd instanceof ClockBasedCommand cc) {
+		} else if (cmd instanceof ClockBased cc) {
 			output.append(Text.literal(" - Type: ")
 					.styled(s -> s.withBold(true).withColor(Formatting.GRAY)))
 					.append(Text.literal("Clock-Based\n"));
@@ -141,7 +147,7 @@ public class CommandMessages {
 						.append(Text.literal("\n"));
 			}
 
-		} else if (cmd instanceof OnceAtBootCommand oc) {
+		} else if (cmd instanceof AtBoot oc) {
 			output.append(Text.literal(" - Type: ")
 					.styled(s -> s.withBold(true).withColor(Formatting.GRAY)))
 					.append(Text.literal("Run Once at Boot\n"));
@@ -267,12 +273,12 @@ public class CommandMessages {
 				.styled(s -> s.withColor(Formatting.GOLD).withBold(true)),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand(""), false);
+		source.sendFeedback(() -> Messages.styledCommand(""), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("help ")
-				.append(CommandMessages.arg("[page]")), false);
+		source.sendFeedback(() -> Messages.styledCommand("help ")
+				.append(Messages.arg("[page]")), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("forcereload")
+		source.sendFeedback(() -> Messages.styledCommand("forcereload")
 				.append(Text.literal(" - reloads the config files")
 						.styled(s -> s.withColor(Formatting.GRAY))),
 				false);
@@ -287,21 +293,21 @@ public class CommandMessages {
 				.styled(s -> s.withColor(Formatting.GOLD).withBold(true)),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("interval ")
-				.append(CommandMessages.arg("<id>")).append(" ")
-				.append(CommandMessages.arg("[unit]")).append(" ")
-				.append(CommandMessages.arg("<interval>")).append(" ")
-				.append(CommandMessages.arg("<command>", Formatting.DARK_GRAY)),
+		source.sendFeedback(() -> Messages.styledCommand("interval ")
+				.append(Messages.arg("<id>")).append(" ")
+				.append(Messages.arg("[unit]")).append(" ")
+				.append(Messages.arg("<interval>")).append(" ")
+				.append(Messages.arg("<command>", Formatting.DARK_GRAY)),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("clockbased ")
-				.append(CommandMessages.arg("<id>")).append(" ")
-				.append(CommandMessages.arg("<command>", Formatting.DARK_GRAY)),
+		source.sendFeedback(() -> Messages.styledCommand("clockbased ")
+				.append(Messages.arg("<id>")).append(" ")
+				.append(Messages.arg("<command>", Formatting.DARK_GRAY)),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("atboot ")
-				.append(CommandMessages.arg("<id>")).append(" ")
-				.append(CommandMessages.arg("<command>", Formatting.DARK_GRAY)),
+		source.sendFeedback(() -> Messages.styledCommand("atboot ")
+				.append(Messages.arg("<id>")).append(" ")
+				.append(Messages.arg("<command>", Formatting.DARK_GRAY)),
 				false);
 
 		source.sendFeedback(() -> Text.literal("For commands on listing details for schedulers, go to page 3")
@@ -314,16 +320,16 @@ public class CommandMessages {
 				.styled(s -> s.withColor(Formatting.GOLD).withBold(true)),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("list"), false);
+		source.sendFeedback(() -> Messages.styledCommand("list"), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("list ")
-				.append(CommandMessages.arg("active")), false);
+		source.sendFeedback(() -> Messages.styledCommand("list ")
+				.append(Messages.arg("active")), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("list ")
-				.append(CommandMessages.arg("inactive")), false);
+		source.sendFeedback(() -> Messages.styledCommand("list ")
+				.append(Messages.arg("inactive")), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("details ")
-				.append(CommandMessages.arg("[id]")), false);
+		source.sendFeedback(() -> Messages.styledCommand("details ")
+				.append(Messages.arg("[id]")), false);
 
 		source.sendFeedback(() -> Text.literal("For commands on modifying schedulers, go to page 4")
 				.styled(s -> s.withColor(Formatting.DARK_GRAY)),
@@ -335,38 +341,38 @@ public class CommandMessages {
 				.styled(s -> s.withColor(Formatting.GOLD).withBold(true)),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("activate ")
-				.append(CommandMessages.arg("[id]")), false);
+		source.sendFeedback(() -> Messages.styledCommand("activate ")
+				.append(Messages.arg("[id]")), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("deactivate ")
-				.append(CommandMessages.arg("[id]")), false);
+		source.sendFeedback(() -> Messages.styledCommand("deactivate ")
+				.append(Messages.arg("[id]")), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("rename ")
-				.append(CommandMessages.arg("[id]")).append(" ")
-				.append(CommandMessages.arg("<new id>")), false);
+		source.sendFeedback(() -> Messages.styledCommand("rename ")
+				.append(Messages.arg("[id]")).append(" ")
+				.append(Messages.arg("<new id>")), false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("description ")
-				.append(CommandMessages.arg("[id]")).append(" ")
-				.append(CommandMessages.arg("<description>"))
+		source.sendFeedback(() -> Messages.styledCommand("description ")
+				.append(Messages.arg("[id]")).append(" ")
+				.append(Messages.arg("<description>"))
 				.append(Text.literal(" - sets description").styled(s -> s.withColor(Formatting.GRAY))),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("addtime ")
-				.append(CommandMessages.arg("<id>")).append(" ")
-				.append(CommandMessages.arg("<time>"))
+		source.sendFeedback(() -> Messages.styledCommand("addtime ")
+				.append(Messages.arg("<id>")).append(" ")
+				.append(Messages.arg("<time>"))
 				.append(Text.literal(" - adds a time for clock-based schedulers")
 						.styled(s -> s.withColor(Formatting.GRAY))),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("removetime ")
-				.append(CommandMessages.arg("<id>")).append(" ")
-				.append(CommandMessages.arg("<time>"))
+		source.sendFeedback(() -> Messages.styledCommand("removetime ")
+				.append(Messages.arg("<id>")).append(" ")
+				.append(Messages.arg("<time>"))
 				.append(Text.literal(" - removes a time for clock-based schedulers")
 						.styled(s -> s.withColor(Formatting.GRAY))),
 				false);
 
-		source.sendFeedback(() -> CommandMessages.styledCommand("remove ")
-				.append(CommandMessages.arg("[id]"))
+		source.sendFeedback(() -> Messages.styledCommand("remove ")
+				.append(Messages.arg("[id]"))
 				.append(Text.literal(" - removes the scheduler entirely")
 						.styled(s -> s.withColor(Formatting.GRAY))),
 				false);
@@ -380,7 +386,7 @@ public class CommandMessages {
 		source.sendFeedback(() -> Text.literal("\n§6[" + title + "]"), false);
 	}
 
-	public static <T extends ScheduledCommandInfo> void sendSchedulerList(ServerCommandSource source,
+	public static <T extends Scheduler> void sendSchedulerList(ServerCommandSource source,
 			List<T> list, Boolean activeOnly) {
 		int count = 0;
 		for (T cmd : list) {

@@ -1,13 +1,16 @@
 package net.william.commandscheduler;
 
-public abstract class BaseScheduledCommand implements ScheduledCommandInfo {
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class Scheduler {
 
     protected String ID;
     protected boolean active = true;
     protected String command;
     protected String description = "";
 
-    public BaseScheduledCommand(String ID, boolean active, String command) {
+    public Scheduler(String ID, boolean active, String command) {
         if (!setID(ID)) {
             throw new IllegalArgumentException("Invalid ID: " + ID);
         }
@@ -55,12 +58,24 @@ public abstract class BaseScheduledCommand implements ScheduledCommandInfo {
         return id != null && id.matches("^[a-zA-Z0-9._-]+$");
     }
 
+    private static final List<String> INVALID_COMMANDS = new ArrayList<>();
+
+    static {
+        INVALID_COMMANDS.add("stop");
+        // Add more as needed
+    }
+
     public static boolean isValidCommand(String command) {
         if (command == null || command.trim().isEmpty()) {
             return false;
         }
 
         String trimmed = command.trim();
-        return !trimmed.equalsIgnoreCase("stop") && !trimmed.equalsIgnoreCase("/stop");
+
+        if (INVALID_COMMANDS.contains(trimmed) || INVALID_COMMANDS.contains("/" + trimmed)) {
+            return false;
+        }
+        return true;
     }
+
 }

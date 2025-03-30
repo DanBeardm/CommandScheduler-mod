@@ -3,14 +3,14 @@ package net.william.commandscheduler;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClockBasedCommand extends BaseScheduledCommand {
+public class ClockBased extends Scheduler {
 
     private List<int[]> times = new ArrayList<>();
 
     private transient int lastRunHour = -1;
     private transient int lastRunMinute = -1;
 
-    public ClockBasedCommand(String ID, String command) {
+    public ClockBased(String ID, String command) {
         super(ID, true, command);
     }
 

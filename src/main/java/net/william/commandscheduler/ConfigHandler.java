@@ -21,7 +21,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CommandSchedulerConfig {
+public class ConfigHandler {
 
   public static Path intervalPath;
   public static Path clockPath;
@@ -40,16 +40,16 @@ public class CommandSchedulerConfig {
 
   private static final Logger LOGGER = LoggerFactory.getLogger("CommandScheduler");
 
-  private static final Type INTERVAL_TYPE = new TypeToken<List<IntervalCommand>>() {
+  private static final Type INTERVAL_TYPE = new TypeToken<List<Interval>>() {
   }.getType();
-  private static final Type CLOCKBASED_TYPE = new TypeToken<List<ClockBasedCommand>>() {
+  private static final Type CLOCKBASED_TYPE = new TypeToken<List<ClockBased>>() {
   }.getType();
-  private static final Type ONCE_TYPE = new TypeToken<List<OnceAtBootCommand>>() {
+  private static final Type ONCE_TYPE = new TypeToken<List<AtBoot>>() {
   }.getType();
 
-  private static List<IntervalCommand> intervalCommands = new ArrayList<>();
-  private static List<ClockBasedCommand> clockBasedCommands = new ArrayList<>();
-  private static List<OnceAtBootCommand> onceAtBootCommands = new ArrayList<>();
+  private static List<Interval> intervalCommands = new ArrayList<>();
+  private static List<ClockBased> clockBasedCommands = new ArrayList<>();
+  private static List<AtBoot> onceAtBootCommands = new ArrayList<>();
 
   public static void loadAllCommands() {
     intervalCommands = loadIntervalCommands();
@@ -57,10 +57,10 @@ public class CommandSchedulerConfig {
     onceAtBootCommands = loadOnceAtBootCommands();
   }
 
-  public static List<IntervalCommand> loadIntervalCommands() {
+  public static List<Interval> loadIntervalCommands() {
 
     intervalPath = CONFIG_PATH.resolve("intervals.json5");
-    List<IntervalCommand> list = loadConfig("intervals.json5", INTERVAL_TYPE);
+    List<Interval> list = loadConfig("intervals.json5", INTERVAL_TYPE);
 
     if (checkForDuplicateIDs(list)) {
       saveIntervalCommands();
@@ -69,13 +69,13 @@ public class CommandSchedulerConfig {
     return list;
   }
 
-  public static List<ClockBasedCommand> loadClockBasedCommands() {
+  public static List<ClockBased> loadClockBasedCommands() {
 
     clockPath = CONFIG_PATH.resolve("clock_based.json5");
-    List<ClockBasedCommand> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE);
+    List<ClockBased> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE);
 
     // Sort the times for each loaded command
-    for (ClockBasedCommand cc : list) {
+    for (ClockBased cc : list) {
       cc.getTimes().sort((a, b) -> {
         int cmp = Integer.compare(a[0], b[0]); // compare hours
         return cmp != 0 ? cmp : Integer.compare(a[1], b[1]); // if equal, compare minutes
@@ -89,9 +89,9 @@ public class CommandSchedulerConfig {
     return list;
   }
 
-  public static List<OnceAtBootCommand> loadOnceAtBootCommands() {
+  public static List<AtBoot> loadOnceAtBootCommands() {
     onceAtBootPath = CONFIG_PATH.resolve("once_at_boot.json5");
-    List<OnceAtBootCommand> list = loadConfig("once_at_boot.json5", ONCE_TYPE);
+    List<AtBoot> list = loadConfig("once_at_boot.json5", ONCE_TYPE);
 
     if (checkForDuplicateIDs(list)) {
       saveOnceAtBootCommands();
@@ -124,8 +124,8 @@ public class CommandSchedulerConfig {
       List<T> validEntries = new ArrayList<>();
       for (T entry : loaded) {
         try {
-          if (entry instanceof IntervalCommand ic) {
-            if (!IntervalCommand.isValidInterval(ic.getInterval())) {
+          if (entry instanceof Interval ic) {
+            if (!Interval.isValidInterval(ic.getInterval())) {
               LOGGER.error("Skipping invalid interval for ID '{}': {}", ic.getID(), ic.getInterval());
               continue;
             }
@@ -156,7 +156,7 @@ public class CommandSchedulerConfig {
     boolean duplicatesFound = false;
 
     for (T item : list) {
-      if (!(item instanceof ScheduledCommandInfo cmd)) {
+      if (!(item instanceof Scheduler cmd)) {
         continue;
       }
 
@@ -172,11 +172,9 @@ public class CommandSchedulerConfig {
         } while (idMap.containsKey(newID));
 
         // Update the command's ID
-        if (cmd instanceof BaseScheduledCommand baseCmd) {
-          baseCmd.setID(newID);
-          duplicatesFound = true;
-          LOGGER.warn("Renamed duplicate ID '{}' to '{}'", originalID, newID);
-        }
+        cmd.setID(newID);
+        duplicatesFound = true;
+        LOGGER.warn("Renamed duplicate ID '{}' to '{}'", originalID, newID);
 
         // Track both old and new IDs
         idMap.put(originalID, duplicateCount);
@@ -267,15 +265,15 @@ public class CommandSchedulerConfig {
   }
 
   public static Object getCommandById(String id) {
-    for (IntervalCommand ic : intervalCommands) {
+    for (Interval ic : intervalCommands) {
       if (ic.getID().equals(id))
         return ic;
     }
-    for (ClockBasedCommand cc : clockBasedCommands) {
+    for (ClockBased cc : clockBasedCommands) {
       if (cc.getID().equals(id))
         return cc;
     }
-    for (OnceAtBootCommand oc : onceAtBootCommands) {
+    for (AtBoot oc : onceAtBootCommands) {
       if (oc.getID().equals(id))
         return oc;
     }
@@ -284,20 +282,20 @@ public class CommandSchedulerConfig {
 
   public static boolean updateSchedulerId(String oldId, String newId) {
     Object cmd = getCommandById(oldId);
-    if (cmd == null || !BaseScheduledCommand.isValidID(newId))
+    if (cmd == null || !Scheduler.isValidID(newId))
       return false;
 
     boolean success = false;
 
-    if (cmd instanceof IntervalCommand ic) {
+    if (cmd instanceof Interval ic) {
       success = ic.setID(newId);
       if (success)
         saveIntervalCommands();
-    } else if (cmd instanceof ClockBasedCommand cc) {
+    } else if (cmd instanceof ClockBased cc) {
       success = cc.setID(newId);
       if (success)
         saveClockBasedCommands();
-    } else if (cmd instanceof OnceAtBootCommand oc) {
+    } else if (cmd instanceof AtBoot oc) {
       success = oc.setID(newId);
       if (success)
         saveOnceAtBootCommands();
@@ -312,7 +310,7 @@ public class CommandSchedulerConfig {
 
   public static void saveClockBasedCommands() {
     // Sort the times in each ClockBasedCommand before saving
-    for (ClockBasedCommand cc : clockBasedCommands) {
+    for (ClockBased cc : clockBasedCommands) {
       cc.getTimes().sort((time1, time2) -> {
         int hourComparison = Integer.compare(time1[0], time2[0]);
         if (hourComparison != 0) {
@@ -329,39 +327,39 @@ public class CommandSchedulerConfig {
     saveConfig(onceAtBootPath, onceAtBootCommands, ONCE_TYPE);
   }
 
-  public static List<ClockBasedCommand> getClockBasedCommands() {
+  public static List<ClockBased> getClockBasedCommands() {
     return Collections.unmodifiableList(clockBasedCommands);
   }
 
-  public static List<IntervalCommand> getIntervalCommands() {
+  public static List<Interval> getIntervalCommands() {
     return Collections.unmodifiableList(intervalCommands);
   }
 
-  public static List<OnceAtBootCommand> getOnceAtBootCommands() {
+  public static List<AtBoot> getOnceAtBootCommands() {
     return Collections.unmodifiableList(onceAtBootCommands);
   }
 
-  public static void addClockBasedCommand(ClockBasedCommand command) {
+  public static void addClockBasedCommand(ClockBased command) {
     clockBasedCommands.add(command);
   }
 
-  public static void addIntervalCommand(IntervalCommand command) {
+  public static void addIntervalCommand(Interval command) {
     intervalCommands.add(command);
   }
 
-  public static void addOnceAtBootCommand(OnceAtBootCommand command) {
+  public static void addOnceAtBootCommand(AtBoot command) {
     onceAtBootCommands.add(command);
   }
 
   public static List<String> getAllSchedulerIDs() {
     List<String> ids = new ArrayList<>();
-    for (ScheduledCommandInfo cmd : getIntervalCommands()) {
+    for (Scheduler cmd : getIntervalCommands()) {
       ids.add(cmd.getID());
     }
-    for (ScheduledCommandInfo cmd : getClockBasedCommands()) {
+    for (Scheduler cmd : getClockBasedCommands()) {
       ids.add(cmd.getID());
     }
-    for (ScheduledCommandInfo cmd : getOnceAtBootCommands()) {
+    for (Scheduler cmd : getOnceAtBootCommands()) {
       ids.add(cmd.getID());
     }
     return ids;
@@ -369,7 +367,7 @@ public class CommandSchedulerConfig {
 
   public static List<String> getClockBasedSchedulerIDs() {
     List<String> ids = new ArrayList<>();
-    for (ScheduledCommandInfo cmd : getClockBasedCommands()) {
+    for (Scheduler cmd : getClockBasedCommands()) {
       ids.add(cmd.getID());
     }
     return ids;

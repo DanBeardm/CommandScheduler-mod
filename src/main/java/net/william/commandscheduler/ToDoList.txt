@@ -1,4 +1,6 @@
  
+ VERSION 1.0:
+
  ✅ /commandscheduler - should simply send a help menu of other commands
  ✅ /commandscheduler help [page]
  ✅ /commandscheduler forcereload - reloads the config files
@@ -20,11 +22,20 @@
  ✅ /commandscheduler removetime <id> <time> - removes a time for when the scheduled command shouldn't run
  ✅ /commandscheduler remove [id]
 
- ❌ /commandscheduler singlefire [id] [date] [time] [command] - A new type of scheduler! Fire the command once on a specific time stamp, and then delete itself. Requires new config file.
- 
  ❌ /commandscheduler list interval - These should have pages!
  ❌ /commandscheduler list clockbased - These should have pages!
  ❌ /commandscheduler list atboot - These should have pages!
- ❌ /commandscheduler list singlefire - These should have pages! 
  
- - Fix printout of list command if more than 10 items. Maybe reduce to like 4 max of each? (4+1) x 4 = 20 lines
+ - Fix printout of "list" command if more than 10 items. Maybe reduce to like 4 max of each? (4+1) x 4 = 20 lines
+
+
+ FOR UPCOMING VERSIONs:
+
+ ❌ /commandscheduler singlefire [id] [date] [time] [command] - A new type of scheduler! Fire the command once on a specific time stamp, and then delete itself. Requires new config file.
+ 
+ ❌ /commandscheduler list singlefire - These should have pages! 
+
+ ❌ /commandscheduler addcommand [id] <command> - The ability to have multiple commands run after each other on the same scheduler!
+ ❌ /commandscheduler removecommand [int]- Removes a command from a scheduler
+
+ 💡 /commandscheduler details [id] - Already exists, but modify to nicely list all commands, with an associated number to simplify removing them

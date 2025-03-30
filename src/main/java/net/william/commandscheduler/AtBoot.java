@@ -1,11 +1,14 @@
 package net.william.commandscheduler;
 
-public class OnceAtBootCommand extends BaseScheduledCommand {
+public class AtBoot extends Scheduler {
+
+    // IMPORTANT! Every subclass of BaseScheduledCommand needs a TYPENAME
+    public static final String TYPENAME = "At-Boot";
+
     private transient boolean expired = false;
 
-    public OnceAtBootCommand(String ID, String command) {
+    public AtBoot(String ID, String command) {
         super(ID, true, command);
-
     }
 
     public boolean isExpired() {

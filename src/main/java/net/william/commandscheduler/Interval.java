@@ -1,6 +1,6 @@
 package net.william.commandscheduler;
 
-public class IntervalCommand extends BaseScheduledCommand {
+public class Interval extends Scheduler {
 
     private TimeUnit unit;
     private int interval;
@@ -9,7 +9,7 @@ public class IntervalCommand extends BaseScheduledCommand {
     private transient int tickCounter;
     private transient boolean hasRun = false;
 
-    public IntervalCommand(String ID, String command, int interval, String unit, boolean runInstantly) {
+    public Interval(String ID, String command, int interval, String unit, boolean runInstantly) {
         super(ID, true, command);
         this.setInterval(interval);
         this.setUnit(unit);
