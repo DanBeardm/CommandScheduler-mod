@@ -56,7 +56,7 @@
  
  I tested singleplayer functionality for 1.19.2 and it did boot, schedulers successfully ran and all logic seemed to work, although it seems that printouts don't really work. When for example running "/commandscheduler help" absolutely nothing shows. This is likely related to how 1.19 handles ServerCommandSource.sendFeedback().
 
- This likely means that 1.0 will only be initially released for m Minecraft versions between 1.20 and 1.21.5. I might at a later date make a new repository to adapt 1.0 for older versions, unless I start working on 1.1 of the mod first. We'll see.
+ This likely means that I'll only initially release 1.0 for Minecraft versions between 1.20 and 1.21.5. I might at a later date make a new repository to adapt 1.0 for older versions, unless I start working on 1.1 of the mod first. We'll see.
 
 ----
 
