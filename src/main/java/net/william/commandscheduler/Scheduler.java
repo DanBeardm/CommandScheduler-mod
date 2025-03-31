@@ -39,6 +39,12 @@ public abstract class Scheduler {
     }
 
     public void setCommand(String command) {
+
+        // remove the slash if user added slash
+        if (command != null && command.startsWith("/")) {
+            command = command.substring(1);
+        }
+
         this.command = command;
     }
 

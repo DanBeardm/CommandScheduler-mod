@@ -22,6 +22,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -42,6 +43,9 @@ public class Main implements ModInitializer {
 
   // 2 is for OPs
   private static final int permissionLevel = 2;
+
+  // How many schedulers should be listed when running list command
+  private static final int listingsPerPage = 10;
 
   public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
   private static final Map<UUID, PendingRemoval> pendingRemovals = new HashMap<>();
@@ -148,7 +152,7 @@ public class Main implements ModInitializer {
         // Command to show small about page for the mod, links to github repo
         .then(literal("about")
             .executes(ctx -> {
-              ctx.getSource().sendFeedback(() -> Text.literal(" - CommandScheduler v1.0 ")
+              ctx.getSource().sendFeedback(() -> Text.literal("\n[CommandScheduler v1.0]")
                   .styled(s -> s.withColor(Formatting.GOLD).withBold(true)), false);
 
               ctx.getSource().sendFeedback(() -> Text.literal(" - Fabric mod made by Poizon.")
@@ -165,76 +169,110 @@ public class Main implements ModInitializer {
                   .append(" for usage.")
                   .styled(s -> s.withColor(Formatting.GRAY)), false);
 
-              ctx.getSource().sendFeedback(() -> Text.literal(" - The github repository:\n")
-                  .append(Text.literal("https://github.com/wPoizon/command-scheduler-1.20.2")
-                      .styled(s -> s.withColor(Formatting.BLUE).withUnderline(true))),
+              ctx.getSource().sendFeedback(() -> Text.literal(" - The github repository:")
+                  .styled(s -> s.withColor(Formatting.GRAY)), false);
+
+              ctx.getSource().sendFeedback(() -> Text.literal(" https://github.com/wPoizon/command-scheduler-1.20.2")
+                  .styled(s -> s
+                      .withColor(Formatting.BLUE)
+                      .withUnderline(true)
+                      .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL,
+                          "https://github.com/wPoizon/command-scheduler-1.20.2"))),
                   false);
 
               return 1;
             }))
 
         // Command for force reloading config files. Needed if they are manually changed
-        .then(literal("forcereload")
+        .then(literal("reload")
             .executes(ctx -> {
               ConfigHandler.reloadConfigs();
-              Messages.sendForceReloadSuccess(ctx);
+              Messages.sendReloadSuccess(ctx);
               return 1;
             }))
 
         // Command to list all schedulers
         .then(literal("list")
-            .executes(ctx -> {
-              ServerCommandSource source = ctx.getSource();
 
-              Messages.sendListHeader(source, "Interval Schedulers");
-              Messages.sendSchedulerList(source, ConfigHandler.getIntervalCommands(), null);
-
-              Messages.sendListHeader(source, "Clock-Based Schedulers");
-              Messages.sendSchedulerList(source, ConfigHandler.getClockBasedCommands(), null);
-
-              Messages.sendListHeader(source, "At-Boot Schedulers");
-              Messages.sendSchedulerList(source, ConfigHandler.getOnceAtBootCommands(), null);
-
-              source.sendFeedback(() -> Text.literal(""), false); // This sends a blank line
-
-              return 1;
-            }))
-
-        // Command to list all active schedulers
-        .then(literal("list")
+            // Command to list all active schedulers
             .then(literal("active")
                 .executes(ctx -> {
                   ServerCommandSource source = ctx.getSource();
 
                   Messages.sendListHeader(source, "Active Interval Commands");
-                  Messages.sendSchedulerList(source, ConfigHandler.getIntervalCommands(), true);
+                  Messages.sendList(source, ConfigHandler.getIntervalCommands(), true);
 
                   Messages.sendListHeader(source, "Active Clock-Based Commands");
-                  Messages.sendSchedulerList(source, ConfigHandler.getClockBasedCommands(), true);
+                  Messages.sendList(source, ConfigHandler.getClockBasedCommands(), true);
 
                   Messages.sendListHeader(source, "Active Run Once Commands");
-                  Messages.sendSchedulerList(source, ConfigHandler.getOnceAtBootCommands(), true);
+                  Messages.sendList(source, ConfigHandler.getOnceAtBootCommands(), true);
 
                   return 1;
-                })))
+                }))
 
-        // Command to list all inactive schedulers
-        .then(literal("list")
+            // Command to list all inactive schedulers
             .then(literal("inactive")
                 .executes(ctx -> {
                   ServerCommandSource source = ctx.getSource();
 
                   Messages.sendListHeader(source, "Inactive Interval Commands");
-                  Messages.sendSchedulerList(source, ConfigHandler.getIntervalCommands(), false);
+                  Messages.sendList(source, ConfigHandler.getIntervalCommands(), false);
 
                   Messages.sendListHeader(source, "Inactive Clock-Based Commands");
-                  Messages.sendSchedulerList(source, ConfigHandler.getClockBasedCommands(), false);
+                  Messages.sendList(source, ConfigHandler.getClockBasedCommands(), false);
 
                   Messages.sendListHeader(source, "Inactive Run Once Commands");
-                  Messages.sendSchedulerList(source, ConfigHandler.getOnceAtBootCommands(), false);
+                  Messages.sendList(source, ConfigHandler.getOnceAtBootCommands(), false);
 
                   return 1;
-                })))
+                }))
+
+            // Command to list all interval schedulers
+            .then(literal(Types.INTERVAL.name)
+                .executes(ctx -> {
+                  Messages.sendListOfType(ctx.getSource(), ConfigHandler.getIntervalCommands(), 1,
+                      "Interval Schedulers",
+                      listingsPerPage);
+                  return 1;
+                })
+                .then(argument("page", IntegerArgumentType.integer(1))
+                    .executes(ctx -> {
+                      int page = IntegerArgumentType.getInteger(ctx, "page");
+                      Messages.sendListOfType(ctx.getSource(), ConfigHandler.getIntervalCommands(), page,
+                          "Interval Schedulers", listingsPerPage);
+                      return 1;
+                    })))
+
+            // Command to list all clockbased schedulers
+            .then(literal(Types.CLOCKBASED.name)
+                .executes(ctx -> {
+                  Messages.sendListOfType(ctx.getSource(), ConfigHandler.getClockBasedCommands(), 1,
+                      "Clock-Based Schedulers", listingsPerPage);
+                  return 1;
+                })
+                .then(argument("page", IntegerArgumentType.integer(1))
+                    .executes(ctx -> {
+                      int page = IntegerArgumentType.getInteger(ctx, "page");
+                      Messages.sendListOfType(ctx.getSource(), ConfigHandler.getClockBasedCommands(), page,
+                          "Clock-Based Schedulers", listingsPerPage);
+                      return 1;
+                    })))
+
+            // Command to list all atboot schedulers
+            .then(literal(Types.ATBOOT.name)
+                .executes(ctx -> {
+                  Messages.sendListOfType(ctx.getSource(), ConfigHandler.getOnceAtBootCommands(), 1,
+                      "Run Once At Boot Schedulers", listingsPerPage);
+                  return 1;
+                })
+                .then(argument("page", IntegerArgumentType.integer(1))
+                    .executes(ctx -> {
+                      int page = IntegerArgumentType.getInteger(ctx, "page");
+                      Messages.sendListOfType(ctx.getSource(), ConfigHandler.getOnceAtBootCommands(), page,
+                          "Run Once At Boot Schedulers", listingsPerPage);
+                      return 1;
+                    }))))
 
         // Command for activating a scheduler
         .then(literal("activate")
@@ -432,7 +470,7 @@ public class Main implements ModInitializer {
                     }
                     pendingRemovals.remove(playerUUID);
                   } else {
-                    // ✅ Check if the ID actually exists before starting confirmation
+                    // Check if the ID actually exists before starting confirmation
                     if (ConfigHandler.getCommandById(id) == null) {
                       Messages.sendIdNotFound(ctx, id);
                       return 0;

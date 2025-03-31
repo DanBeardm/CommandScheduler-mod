@@ -22,11 +22,54 @@
 		"net.william.commandscheduler.CommandschedulerClient"
 	  ]
 	},
+
+	"conflicts": {
+		"minecraft": ""
+	}, 
+
 	"depends": {
 	  "fabricloader": ">=0.16.10",
-	  "minecraft": "~1.20.2",
+	  "minecraft": "*",
 	  "java": ">=17",
 	  "fabric-api": "*"
+	},
+
+
+
+
+	"works": {
+		"tested_singleplayer": [
+			"~1.20.2",
+			"~1.21.4"
+		],
+		"tested_multiplayer": [
+			"~1.20.2",
+			""
+		]
+	},
+
+	"works-but-badly": {
+		"tested_singleplayer": [
+			"~1.19.2",
+			""
+		],
+		"tested_versions": [
+			"",
+			""
+		]
+	},
+
+	"not-working": {
+		"tested_singleplayer": [
+			"",
+			""
+		],
+		"tested_versions": [
+			"",
+			""
+		]
 	}
+
+	
   }
   
