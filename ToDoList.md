@@ -50,21 +50,13 @@
  
  ### FUNCTIONALITY AND OTHER NOTES:
 
- I have tested everything and confirmed functionality for 1.20.2 for both singleplayer and for servers! The only 
- quirk for singleplayer being that it seems that the atboot commands only runs the first time on that runtime. 
- If you leave, wait and then rejoin, it does NOT send a new atboot command. If you however restart your game,
- it does successfully send a new atboot command.
+ I have tested everything and confirmed functionality for 1.20.2 for both singleplayer and for servers! The only quirk for singleplayer being that it seems that the atboot commands only runs the first time on that runtime. If you leave, wait and then rejoin, it does NOT send a new atboot command. If you however restart your game, it does successfully send a new atboot command.
 
- I also tested singleplayer functionality for 1.21.4 and everything did seem to work. It is likely it will be fully
- compatible for 1.21.5 however I must first test multiplayer functionality before being sure.
+ I also tested singleplayer functionality for 1.21.4 and everything did seem to work. It is likely it will be fully compatible for 1.21.5 however I must first test multiplayer functionality before being sure.
+ 
+ I tested singleplayer functionality for 1.19.2 and it did boot, schedulers successfully ran and all logic seemed to work, although it seems that printouts don't really work. When for example running "/commandscheduler help" absolutely nothing shows. This is likely related to how 1.19 handles ServerCommandSource.sendFeedback().
 
- I tested singleplayer functionality for 1.19.2 and it did boot, schedulers successfully ran and all logic
- seemed to work, although it seems that printouts don't really work. When for example running "/commandscheduler help"
- absolutely nothing shows. This is likely related to how 1.19 handles ServerCommandSource.sendFeedback().
-
- This likely means that the mod 1.0 version will initially only be made for versions between 1.20 and 1.21.5.
- I might at a later date make a new repository to adapt the 1.0 version for older versions, unless I start
- working on version 1.1 of the mod first. We'll see.
+ This likely means that 1.0 will only be initially released for m Minecraft versions between 1.20 and 1.21.5. I might at a later date make a new repository to adapt 1.0 for older versions, unless I start working on 1.1 of the mod first. We'll see.
 
 ----
 
