@@ -6,7 +6,7 @@ Created by Poizon.
 ## Status
 
 The mod is **mostly complete and stable**.  
-Almost all planned commands have been added, and most core functionality has been tested. You can activate, deactivate, rename, and schedule commands via in-game commands. See [this file](src/main/java/net/william/commandscheduler/ToDoList.txt) to see what is finished and what is planned ahead.
+Almost all planned commands have been added, and most core functionality has been tested. You can activate, deactivate, rename, and schedule commands via in-game commands. See [this file](ToDoList.txt) to see what is finished and what is planned ahead.
 
 ---
 
