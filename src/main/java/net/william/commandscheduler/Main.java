@@ -172,12 +172,12 @@ public class Main implements ModInitializer {
               ctx.getSource().sendFeedback(() -> Text.literal(" - The github repository:")
                   .styled(s -> s.withColor(Formatting.GRAY)), false);
 
-              ctx.getSource().sendFeedback(() -> Text.literal(" https://github.com/wPoizon/command-scheduler-1.20.2")
+              ctx.getSource().sendFeedback(() -> Text.literal(" https://github.com/wPoizon/CommandScheduler-mod")
                   .styled(s -> s
                       .withColor(Formatting.BLUE)
                       .withUnderline(true)
                       .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL,
-                          "https://github.com/wPoizon/command-scheduler-1.20.2"))),
+                          "https://github.com/wPoizon/CommandScheduler-mod"))),
                   false);
 
               return 1;
