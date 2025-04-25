@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/logo4K.png" alt="Command Scheduler Logo" width="200" style="border-radius: 30px;" />
+  <img src="img/logo4k.png" alt="Command Scheduler Logo" width="200" style="border-radius: 30px;" />
 </p>
 
 # Command Scheduler (Fabric)
