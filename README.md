@@ -6,7 +6,7 @@ Created by Poizon.
 ## Status
 
 The mod is **mostly complete and stable**.  
-Almost all planned commands have been added, and most core functionality has been tested. You can activate, deactivate, rename, and schedule commands via in-game commands. See [this file](ToDoList.md) to see what is finished and what is planned ahead.
+Almost all planned commands have been added, and most core functionality has been tested for all sub-versions of 1.20 and 1.21. You can activate, deactivate, rename, and schedule commands via in-game commands. See [this file](ToDoList.md) to see what is finished and what features are planned ahead.
 
 ---
 
