@@ -77,3 +77,5 @@
   The removecommand could also give a confirmation like "Are you sure you want to remove this command: `[show command]`"
 
  💡 `/commandscheduler details <id>` - Already exists, but modify to nicely list all commands, with an associated number to simplify removing them
+
+ 💡 Add option to prevent OP's from being able modify or add new schedulers. Basically make it server-console or file editing only to add or modify. OPs would still however be able to view the current scheduler setups.
