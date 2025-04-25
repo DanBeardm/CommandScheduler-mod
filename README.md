@@ -7,8 +7,6 @@
 A Minecraft Fabric mod for schedulable and repeatable commands — made for 1.20.2.  
 Created by Poizon.
 
-[this file](ToDoList.md)
-
 ## Status
 
 The mod is **mostly complete and stable**.  
