@@ -7,7 +7,7 @@
 A Minecraft Fabric mod for schedulable and repeatable commands — made for 1.20.2.  
 Created by Poizon.
 
-[this file](ToDoList.md)
+[Modrinth page](https://modrinth.com/mod/command-scheduler)
 
 ## Status
 
@@ -40,8 +40,6 @@ This is my first ever Minecraft mod! I made it for my own server, and I rushed t
 - Minecraft version: **1.20.2**  
 - Fabric Loader: **0.16.10**  
 - Fabric API: **0.91.6+1.20.2**
-
-[Modrinth page](https://modrinth.com/mod/command-scheduler)
 
 ## Screenshots
 
