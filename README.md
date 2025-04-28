@@ -31,7 +31,7 @@ You can schedule:
 
 This is my first ever Minecraft mod! I made it for my own server, and I rushed through some parts to get it functional quickly — but added some helpful tools, command structure, and clean formatting to make it feel smooth.
 
-⚠️ **Note**: 99% of the code was written by ChatGPT, under my constant guidance and review. I do know Java quite well but wanted it done quickly. Think of it as AI-assisted but user-shaped.
+⚠️ **Note**: 90% of the code was written by ChatGPT, under my constant guidance and review. I do know Java quite well but wanted it done quickly. Think of it as AI-assisted but user-shaped.
 
 ---
 
