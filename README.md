@@ -4,7 +4,7 @@
 
 # Command Scheduler (Fabric)
 
-A Minecraft Fabric mod for schedulable and repeatable commands — made for 1.20.2.  
+A Minecraft Fabric mod for schedulable and repeatable commands — made for 1.20 and 1.21.  
 Created by Poizon.
 
 [Modrinth page](https://modrinth.com/mod/command-scheduler)
@@ -31,13 +31,13 @@ You can schedule:
 
 This is my first ever Minecraft mod! I made it for my own server, and I rushed through some parts to get it functional quickly — but added some helpful tools, command structure, and clean formatting to make it feel smooth.
 
-⚠️ **Note**: 99% of the code was written by ChatGPT, under my constant guidance and review. I do know Java quite well but wanted it done quickly. Think of it as AI-assisted but user-shaped.
+⚠️ **Note**: 90% of the code was written by ChatGPT, under my constant guidance and review. I do know Java quite well but wanted it done quickly. Think of it as AI-assisted but user-shaped.
 
 ---
 
 ## Platform
 
-- Minecraft version: **1.20.2**  
+- Minecraft versions: **from 1.20 to 1.21.5**  
 - Fabric Loader: **0.16.10**  
 - Fabric API: **0.91.6+1.20.2**
 
