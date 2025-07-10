@@ -37,7 +37,7 @@ This is my first ever Minecraft mod! I made it for my own server, and I rushed t
 
 ## Platform
 
-- Minecraft versions: **from 1.20 to 1.21.5**  
+- Minecraft versions: **from 1.20 to 1.21.7**  
 - Fabric Loader: **0.16.10**  
 - Fabric API: **0.91.6+1.20.2**
 
