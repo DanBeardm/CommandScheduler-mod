@@ -40,7 +40,7 @@ public class ConfigHandler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger("CommandScheduler");
 
-  private static final Type INTERVAL_TYPE = new TypeToken<List<Interval>>() {
+  private static final Type INTERVAL_JSON_TYPE = new TypeToken<List<com.google.gson.JsonObject>>() {
   }.getType();
   private static final Type CLOCKBASED_TYPE = new TypeToken<List<ClockBased>>() {
   }.getType();
@@ -57,39 +57,128 @@ public class ConfigHandler {
     onceAtBootCommands = loadOnceAtBootCommands();
   }
 
-  public static List<Interval> loadIntervalCommands() {
+    public static List<Interval> loadIntervalCommands() {
+        intervalPath = CONFIG_PATH.resolve("intervals.json5");
+        List<com.google.gson.JsonObject> rawList = loadConfig("intervals.json5", INTERVAL_JSON_TYPE);
 
-    intervalPath = CONFIG_PATH.resolve("intervals.json5");
-    List<Interval> list = loadConfig("intervals.json5", INTERVAL_TYPE);
+        List<Interval> list = new ArrayList<>();
+        for (com.google.gson.JsonObject obj : rawList) {
+            try {
+                String id = obj.get("ID").getAsString();
+                int interval = obj.get("interval").getAsInt();
+                String unit = obj.get("unit").getAsString();
+                boolean runInstantly = obj.has("runInstantly") && obj.get("runInstantly").getAsBoolean();
+                boolean random = obj.has("random") && obj.get("random").getAsBoolean();
 
-    if (checkForDuplicateIDs(list)) {
-      saveIntervalCommands();
+                List<List<String>> commandGroups = new ArrayList<>();
+
+                if (obj.has("commands")) {
+                    // Could be flat OR nested
+                    var arr = obj.getAsJsonArray("commands");
+                    if (arr.size() > 0 && arr.get(0).isJsonArray()) {
+                        // ✅ Nested array: [["say A","say B"],["say X","say Y"]]
+                        for (var el : arr) {
+                            List<String> group = new ArrayList<>();
+                            for (var cmd : el.getAsJsonArray()) {
+                                group.add(cmd.getAsString());
+                            }
+                            commandGroups.add(group);
+                        }
+                    } else {
+                        // ✅ Flat array: ["say A","say B"]
+                        List<String> group = new ArrayList<>();
+                        for (var el : arr) {
+                            group.add(el.getAsString());
+                        }
+                        commandGroups.add(group);
+                    }
+                } else if (obj.has("command")) {
+                    // ✅ Legacy single command
+                    commandGroups.add(List.of(obj.get("command").getAsString()));
+                }
+
+                Interval ic = new Interval(id, commandGroups, interval, unit, runInstantly, random);
+                list.add(ic);
+
+            } catch (Exception e) {
+                LOGGER.error("Skipping invalid interval entry: {}", e.getMessage());
+            }
+        }
+
+        if (checkForDuplicateIDs(list)) {
+            saveIntervalCommands();
+        }
+
+        return list;
     }
 
-    return list;
-  }
+    public static List<ClockBased> loadClockBasedCommands() {
+        clockPath = CONFIG_PATH.resolve("clock_based.json5");
+        List<com.google.gson.JsonObject> rawList = loadConfig("clock_based.json5", INTERVAL_JSON_TYPE); // reuse JsonObject list
 
-  public static List<ClockBased> loadClockBasedCommands() {
+        List<ClockBased> list = new ArrayList<>();
+        for (com.google.gson.JsonObject obj : rawList) {
+            try {
+                String id = obj.get("ID").getAsString();
+                boolean active = obj.has("active") && obj.get("active").getAsBoolean();
 
-    clockPath = CONFIG_PATH.resolve("clock_based.json5");
-    List<ClockBased> list = loadConfig("clock_based.json5", CLOCKBASED_TYPE);
+                // Times
+                List<int[]> times = new ArrayList<>();
+                if (obj.has("times")) {
+                    for (var t : obj.getAsJsonArray("times")) {
+                        if (t.isJsonArray() && t.getAsJsonArray().size() == 2) {
+                            int hour = t.getAsJsonArray().get(0).getAsInt();
+                            int minute = t.getAsJsonArray().get(1).getAsInt();
+                            times.add(new int[]{hour, minute});
+                        }
+                    }
+                }
 
-    // Sort the times for each loaded command
-    for (ClockBased cc : list) {
-      cc.getTimes().sort((a, b) -> {
-        int cmp = Integer.compare(a[0], b[0]); // compare hours
-        return cmp != 0 ? cmp : Integer.compare(a[1], b[1]); // if equal, compare minutes
-      });
+                // Commands
+                List<String> commands = new ArrayList<>();
+                List<List<String>> commandGroups = new ArrayList<>();
+                boolean random = obj.has("random") && obj.get("random").getAsBoolean();
+
+                if (obj.has("commands")) {
+                    for (var el : obj.getAsJsonArray("commands")) {
+                        if (el.isJsonArray()) {
+                            // Group of commands
+                            List<String> group = new ArrayList<>();
+                            for (var sub : el.getAsJsonArray()) {
+                                group.add(sub.getAsString());
+                            }
+                            commandGroups.add(group);
+                        } else {
+                            // Single command
+                            commands.add(el.getAsString());
+                        }
+                    }
+                } else if (obj.has("command")) {
+                    commands.add(obj.get("command").getAsString()); // legacy single command
+                }
+
+                ClockBased cc = new ClockBased(id, commands, commandGroups, random);
+                cc.setActive(active);
+                for (int[] t : times) {
+                    cc.addTime(t[0], t[1]);
+                }
+
+                list.add(cc);
+
+            } catch (Exception e) {
+                LOGGER.error("Skipping invalid clock-based entry: {}", e.getMessage());
+            }
+        }
+
+        if (checkForDuplicateIDs(list)) {
+            saveClockBasedCommands();
+        }
+
+        return list;
     }
 
-    if (checkForDuplicateIDs(list)) {
-      saveClockBasedCommands();
-    }
 
-    return list;
-  }
-
-  public static List<AtBoot> loadOnceAtBootCommands() {
+    public static List<AtBoot> loadOnceAtBootCommands() {
     onceAtBootPath = CONFIG_PATH.resolve("once_at_boot.json5");
     List<AtBoot> list = loadConfig("once_at_boot.json5", ONCE_TYPE);
 
@@ -304,24 +393,84 @@ public class ConfigHandler {
     return success;
   }
 
-  public static void saveIntervalCommands() {
-    saveConfig(intervalPath, intervalCommands, INTERVAL_TYPE);
-  }
+    public static void saveIntervalCommands() {
+        try (BufferedWriter writer = Files.newBufferedWriter(intervalPath, StandardCharsets.UTF_8)) {
+            com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+            for (Interval ic : intervalCommands) {
+                com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+                obj.addProperty("ID", ic.getID());
+                obj.addProperty("active", ic.isActive());
+                obj.addProperty("interval", ic.getInterval());
+                obj.addProperty("unit", ic.getUnit().toString().toLowerCase());
+                obj.addProperty("runInstantly", ic.shouldRunInstantly());
 
-  public static void saveClockBasedCommands() {
-    // Sort the times in each ClockBasedCommand before saving
-    for (ClockBased cc : clockBasedCommands) {
-      cc.getTimes().sort((time1, time2) -> {
-        int hourComparison = Integer.compare(time1[0], time2[0]);
-        if (hourComparison != 0) {
-          return hourComparison; // Sort by hour first
+                if (ic.getCommandGroup() != null && !ic.getCommandGroup().isEmpty()) {
+                    com.google.gson.JsonArray cmdArr = new com.google.gson.JsonArray();
+                    for (String c : ic.getCommandGroup()) {
+                        cmdArr.add(c);
+                    }
+                    obj.add("commands", cmdArr);
+                    obj.addProperty("random", ic.isRandom());
+                } else {
+                    obj.addProperty("command", ic.getCommand()); // legacy single command
+                }
+
+                arr.add(obj);
+            }
+            gson.toJson(arr, writer);
+        } catch (IOException e) {
+            LOGGER.error("Failed to save interval commands: {}", e.getMessage());
         }
-        return Integer.compare(time1[1], time2[1]); // Then by minute
-      });
     }
 
-    saveConfig(clockPath, clockBasedCommands, CLOCKBASED_TYPE);
-  }
+
+    public static void saveClockBasedCommands() {
+        try (BufferedWriter writer = Files.newBufferedWriter(clockPath, StandardCharsets.UTF_8)) {
+            com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+            for (ClockBased cc : clockBasedCommands) {
+                com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+                obj.addProperty("ID", cc.getID());
+                obj.addProperty("active", cc.isActive());
+
+                // Save times
+                com.google.gson.JsonArray timeArr = new com.google.gson.JsonArray();
+                for (int[] t : cc.getTimes()) {
+                    com.google.gson.JsonArray pair = new com.google.gson.JsonArray();
+                    pair.add(t[0]);
+                    pair.add(t[1]);
+                    timeArr.add(pair);
+                }
+                obj.add("times", timeArr);
+
+                // Save commands
+                if (cc.getCommandGroups() != null && !cc.getCommandGroups().isEmpty()) {
+                    com.google.gson.JsonArray cmdArr = new com.google.gson.JsonArray();
+                    for (List<String> group : cc.getCommandGroups()) {
+                        com.google.gson.JsonArray subArr = new com.google.gson.JsonArray();
+                        for (String cmd : group) {
+                            subArr.add(cmd);
+                        }
+                        cmdArr.add(subArr);
+                    }
+                    obj.add("commands", cmdArr);
+                } else if (cc.getCommands() != null && !cc.getCommands().isEmpty()) {
+                    com.google.gson.JsonArray cmdArr = new com.google.gson.JsonArray();
+                    for (String cmd : cc.getCommands()) {
+                        cmdArr.add(cmd);
+                    }
+                    obj.add("commands", cmdArr);
+                } else {
+                    obj.addProperty("command", cc.getCommand()); // legacy
+                }
+
+                obj.addProperty("random", cc.isRandom());
+                arr.add(obj);
+            }
+            gson.toJson(arr, writer);
+        } catch (IOException e) {
+            LOGGER.error("Failed to save clock-based commands: {}", e.getMessage());
+        }
+    }
 
   public static void saveOnceAtBootCommands() {
     saveConfig(onceAtBootPath, onceAtBootCommands, ONCE_TYPE);

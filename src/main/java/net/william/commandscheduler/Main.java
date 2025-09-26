@@ -91,8 +91,10 @@ public class Main implements ModInitializer {
         }
 
         if (ic.getTickCounter() >= ticks && ic.isActive()) {
-          runScheduledCommand(server, ic.getCommand());
-          ic.run();
+            for (String cmd : ic.getCommandGroup()) {
+                runScheduledCommand(server, cmd);
+            }
+            ic.run();
         }
       }
 
@@ -518,68 +520,58 @@ public class Main implements ModInitializer {
 
             // Command for creating a new interval scheduler
             .then(literal(Types.INTERVAL.name)
-                .then(argument("id", StringArgumentType.word())
-                    .then(argument("unit", StringArgumentType.word()).suggests((ctx, builder) -> {
-                      for (String unitName : TimeUnit.getAllNames()) {
-                        builder.suggest(unitName);
-                      }
-                      return builder.buildFuture();
-                    })
+                    .then(argument("id", StringArgumentType.word())
+                            .then(argument("unit", StringArgumentType.word()).suggests((ctx, builder) -> {
+                            for (String unitName : TimeUnit.getAllNames()) {
+                                builder.suggest(unitName);
+                            }
+                            return builder.buildFuture();
+                        })
                         .then(argument("interval", IntegerArgumentType.integer(1)) // Minimum 1
-                            .then(argument("command", StringArgumentType.greedyString())
-                                .executes(ctx -> {
-                                  String id = StringArgumentType.getString(ctx, "id");
-                                  String unit = StringArgumentType.getString(ctx, "unit");
-                                  int interval = IntegerArgumentType.getInteger(ctx,
-                                      "interval");
-                                  String command = StringArgumentType.getString(ctx,
-                                      "command");
+                                .then(argument("command", StringArgumentType.greedyString())
+                                        .executes(ctx -> {
+                                            String id = StringArgumentType.getString(ctx, "id");
+                                            String unit = StringArgumentType.getString(ctx, "unit");
+                                            int interval = IntegerArgumentType.getInteger(ctx, "interval");
+                                            String commandArg = StringArgumentType.getString(ctx, "command");
 
-                                  // Validate all inputs
-                                  if (!Scheduler.isValidID(id)) {
-                                    Messages.sendInvalidID(ctx);
-                                    return 0;
-                                  }
-                                  if (!TimeUnit.isValid(unit)) {
-                                    ctx.getSource().sendError(
-                                        Text.literal("✖ Invalid unit. Valid units: " + Arrays.stream(TimeUnit.values())
-                                            .map(Enum::name).collect(Collectors.joining(", ")))
-                                            .styled(s -> s.withColor(Formatting.RED)));
-                                    return 0;
-                                  }
-                                  if (!Interval.isValidInterval(interval)) {
-                                    ctx.getSource().sendError(
-                                        Text.literal("✖ Interval must be greater than 0.")
-                                            .styled(s -> s.withColor(Formatting.RED)));
-                                    return 0;
-                                  }
+                                            boolean isRandom = false;
+                                            List<String> commands = new ArrayList<>();
 
-                                  if (!Scheduler.isValidCommand(command)) {
-                                    Messages.sendInvalidCommand(ctx);
-                                  }
+                                            // Check if it starts with "random "
+                                            if (commandArg.toLowerCase().startsWith("random ")) {
+                                                isRandom = true;
+                                                // Remove the prefix and split by ';'
+                                                String trimmed = commandArg.substring(7);
+                                                commands = Arrays.stream(trimmed.split(";"))
+                                                        .map(String::trim)
+                                                        .filter(s -> !s.isEmpty())
+                                                        .collect(Collectors.toList());
+                                            } else {
+                                                commands.add(commandArg);
+                                            }
 
-                                  // Check for existing ID
-                                  if (ConfigHandler.getCommandById(id) != null) {
-                                    Messages.sendIDAlreadyExists(ctx);
-                                    return 0;
-                                  }
+                                            if (commands.isEmpty()) {
+                                                Messages.sendInvalidCommand(ctx);
+                                                return 0;
+                                            }
 
-                                  // Add the command
-                                  try {
-                                    Interval newCmd = new Interval(id, command, interval, unit, true);
-                                    ConfigHandler.addIntervalCommand(newCmd);
-                                    ConfigHandler.saveIntervalCommands();
-                                  } catch (IllegalArgumentException e) {
-                                    ctx.getSource().sendError(
-                                        Text.literal("✖ Error: " + e.getMessage())
-                                            .styled(s -> s.withColor(Formatting.RED)));
-                                    return 0;
-                                  }
+                                            try {
+                                                // NEW - wrap commands into a group
+                                                Interval newCmd = new Interval(id, List.of(commands), interval, unit, true, isRandom);
+                                                ConfigHandler.addIntervalCommand(newCmd);
+                                                ConfigHandler.saveIntervalCommands();
+                                            } catch (IllegalArgumentException e) {
+                                                ctx.getSource().sendError(
+                                                        Text.literal("✖ Error: " + e.getMessage())
+                                                                .styled(s -> s.withColor(Formatting.RED)));
+                                                return 0;
+                                            }
 
-                                  Messages.sendCreatedMessage(ctx, "interval", id);
+                    Messages.sendCreatedMessage(ctx, "interval", id);
+                    return 1;
+            }))))
 
-                                  return 1;
-                                }))))))
 
             // Command for creating a new clock-based scheduler
             .then(literal(Types.CLOCKBASED.name)
@@ -746,7 +738,7 @@ public class Main implements ModInitializer {
                       return 1;
                     }))))
 
-    );
+    )));
   }
 
   private static Boolean setCommandActiveState(String id, boolean active) {
